@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GG Studio" />
+  <meta name="theme-color" content="#1a0f0a" />
+  <title>GG Studio</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #0e0906;
+      --bg2: #1a110c;
+      --bg3: #241810;
+      --card: #1e1410;
+      --border: #3a2518;
+      --gold: #c8956c;
+      --gold2: #e8b48a;
+      --cream: #f0e6d8;
+      --text: #f0e6d8;
+      --text2: #a89080;
+      --text3: #6b5040;
+      --green: #4a9e6e;
+      --red: #c0503a;
+      --white-full: #e8e0d8;
+      --radius: 14px;
+    }
+    html, body, #root { height: 100%; background: var(--bg); color: var(--text); font-family: 'Jost', sans-serif; overflow: hidden; }
+    #root { display: flex; flex-direction: column; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const API = 'https://script.google.com/macros/s/AKfycbwnFUWFEy7v5UoYksPLiJdx-5FLJ9_Eb8YjQou_kW7jUnc4ygZvnUTeyPnuMuc8UsPT/exec';
+
+const GUNLER = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+const SAATLER = ['11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
+
+async function api(action, params = {}, body = null) {
+  const url = new URL(API);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  if (body) {
+    const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action, ...body }) });
+    return res.json();
+  }
+  const res = await fetch(url);
+  return res.json();
+}
+
+// ── ICONS ──────────────────────────────────────────────────────
+const Icon = ({ name, size = 20, color = 'currentColor' }) => {
+  const icons = {
+    home: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>,
+    users: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+    calendar: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>,
+    plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    phone: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+    chevron: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9,18 15,12 9,6"/></svg>,
+    back: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15,18 9,12 15,6"/></svg>,
+    search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
+    alert: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    edit: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+  };
+  return icons[name] || null;
+};
+
+// ── LOADING ────────────────────────────────────────────────────
+const Loader = () => (
+  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', flex:1, flexDirection:'column', gap:16 }}>
+    <div style={{ width:40, height:40, border:`2px solid var(--border)`, borderTop:`2px solid var(--gold)`, borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <span style={{ color:'var(--text2)', fontSize:13, letterSpacing:2, textTransform:'uppercase' }}>Yükleniyor</span>
+  </div>
+);
+
+// ── TOAST ──────────────────────────────────────────────────────
+const Toast = ({ msg, type, onClose }) => {
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  const bg = type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--gold)';
+  return (
+    <div style={{ position:'fixed', top:60, left:'50%', transform:'translateX(-50%)', background:bg, color:'#fff', padding:'10px 20px', borderRadius:30, fontSize:13, fontWeight:500, zIndex:9999, whiteSpace:'nowrap', boxShadow:'0 4px 20px rgba(0,0,0,0.4)', letterSpacing:0.5 }}>
+      {msg}
+    </div>
+  );
+};
+
+// ── MODAL ──────────────────────────────────────────────────────
+const Modal = ({ title, onClose, children }) => (
+  <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:1000, display:'flex', alignItems:'flex-end', backdropFilter:'blur(4px)' }} onClick={onClose}>
+    <div style={{ background:'var(--bg2)', width:'100%', borderRadius:'20px 20px 0 0', padding:'0 0 40px', maxHeight:'90vh', overflowY:'auto' }} onClick={e => e.stopPropagation()}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'20px 20px 16px', borderBottom:`1px solid var(--border)` }}>
+        <span style={{ fontFamily:'Cormorant Garamond', fontSize:20, fontWeight:500, color:'var(--gold2)' }}>{title}</span>
+        <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text2)', padding:4 }}><Icon name="x" size={20} /></button>
+      </div>
+      <div style={{ padding:'20px' }}>{children}</div>
+    </div>
+  </div>
+);
+
+// ── FORM ELEMENTS ──────────────────────────────────────────────
+const Input = ({ label, ...props }) => (
+  <div style={{ marginBottom:16 }}>
+    <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>{label}</label>
+    <input {...props} style={{ width:'100%', background:'var(--bg3)', border:`1px solid var(--border)`, borderRadius:10, padding:'12px 14px', color:'var(--text)', fontSize:15, outline:'none', fontFamily:'Jost', ...props.style }} />
+  </div>
+);
+
+const Select = ({ label, options, value, onChange }) => (
+  <div style={{ marginBottom:16 }}>
+    <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>{label}</label>
+    <select value={value} onChange={onChange} style={{ width:'100%', background:'var(--bg3)', border:`1px solid var(--border)`, borderRadius:10, padding:'12px 14px', color:value ? 'var(--text)' : 'var(--text3)', fontSize:15, outline:'none', fontFamily:'Jost', WebkitAppearance:'none' }}>
+      <option value="">Seç...</option>
+      {options.map(o => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
+    </select>
+  </div>
+);
+
+const Btn = ({ children, onClick, variant = 'primary', disabled, style: s }) => {
+  const styles = {
+    primary: { background:`linear-gradient(135deg, var(--gold), var(--gold2))`, color:'var(--bg)', fontWeight:600 },
+    secondary: { background:'var(--bg3)', color:'var(--text)', border:`1px solid var(--border)` },
+    danger: { background:'rgba(192,80,58,0.15)', color:'var(--red)', border:`1px solid rgba(192,80,58,0.3)` },
+    ghost: { background:'none', color:'var(--text2)' },
+  };
+  return (
+    <button onClick={onClick} disabled={disabled} style={{ padding:'12px 20px', borderRadius:12, border:'none', cursor:disabled?'not-allowed':'pointer', fontSize:14, letterSpacing:0.5, fontFamily:'Jost', opacity:disabled?0.5:1, transition:'all 0.2s', ...styles[variant], ...s }}>
+      {children}
+    </button>
+  );
+};
+
+// ── ÖĞRENCI FORMU ──────────────────────────────────────────────
+const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
+  const [form, setForm] = useState({
+    ad_soyad:'', tc_kimlik:'', telefon:'+90', dogum_tarihi:'',
+    paket_tipi:'', gun1:'', saat1:'', gun2:'', saat2:'', gun3:'', saat3:'',
+    ...(initial || {})
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Dolu saatleri hesapla (mevcut öğrencilerden)
+  const doluSaatler = (gun) => {
+    if (!gun) return [];
+    const sayac = {};
+    mevcutOgrenciler.forEach(o => {
+      if (o.id === initial?.id) return; // düzenleniyorsa kendisini sayma
+      if (o.kalan_ders <= 0) return;
+      [[o.gun1,o.saat1],[o.gun2,o.saat2],[o.gun3,o.saat3]].forEach(([g,s]) => {
+        if (g === gun && s) sayac[s] = (sayac[s] || 0) + 1;
+      });
+    });
+    return Object.entries(sayac).filter(([,c]) => c >= 5).map(([s]) => s);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.ad_soyad || !form.paket_tipi || !form.gun1 || !form.saat1 || !form.gun2 || !form.saat2) {
+      alert('Lütfen zorunlu alanları doldurun'); return;
+    }
+    if (form.paket_tipi === '12' && (!form.gun3 || !form.saat3)) {
+      alert('12 seanslık paket için 3. gün ve saati seçin'); return;
+    }
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  };
+
+  const doluSaat1 = doluSaatler(form.gun1);
+  const doluSaat2 = doluSaatler(form.gun2);
+  const doluSaat3 = doluSaatler(form.gun3);
+
+  return (
+    <div>
+      <Input label="Ad Soyad *" value={form.ad_soyad} onChange={e => set('ad_soyad', e.target.value)} placeholder="Ad Soyad" />
+      <Input label="TC Kimlik" value={form.tc_kimlik} onChange={e => set('tc_kimlik', e.target.value)} placeholder="TC Kimlik No" inputMode="numeric" />
+      <Input label="Telefon" value={form.telefon} onChange={e => set('telefon', e.target.value)} placeholder="+90 5xx xxx xx xx" inputMode="tel" />
+      <Input label="Doğum Tarihi" type="date" value={form.dogum_tarihi} onChange={e => set('dogum_tarihi', e.target.value)} />
+
+      <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Paket Tipi *</label>
+        <div style={{ display:'flex', gap:10 }}>
+          {['8','12'].map(p => (
+            <button key={p} onClick={() => set('paket_tipi', p)} style={{ flex:1, padding:'12px', borderRadius:10, border:`1px solid ${form.paket_tipi===p?'var(--gold)':'var(--border)'}`, background:form.paket_tipi===p?'rgba(200,149,108,0.15)':'var(--bg3)', color:form.paket_tipi===p?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:16, fontWeight:600, cursor:'pointer' }}>
+              {p} Seans
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {form.paket_tipi && (
+        <>
+          <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>1. Gün & Saat</p>
+            <Select label="Gün 1 *" value={form.gun1} onChange={e => { set('gun1', e.target.value); set('saat1', ''); }} options={GUNLER} />
+            {form.gun1 && (
+              <Select label="Saat 1 *" value={form.saat1} onChange={e => set('saat1', e.target.value)}
+                options={SAATLER.filter(s => !doluSaat1.includes(s)).map(s => ({ value:s, label:doluSaat1.includes(s)?`${s} (Dolu)`:s }))} />
+            )}
+          </div>
+
+          <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>2. Gün & Saat</p>
+            <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2', e.target.value); set('saat2', ''); }} options={GUNLER} />
+            {form.gun2 && (
+              <Select label="Saat 2 *" value={form.saat2} onChange={e => set('saat2', e.target.value)}
+                options={SAATLER.filter(s => !doluSaat2.includes(s)).map(s => ({ value:s, label: s }))} />
+            )}
+          </div>
+
+          {form.paket_tipi === '12' && (
+            <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+              <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>3. Gün & Saat</p>
+              <Select label="Gün 3 *" value={form.gun3} onChange={e => { set('gun3', e.target.value); set('saat3', ''); }} options={GUNLER} />
+              {form.gun3 && (
+                <Select label="Saat 3 *" value={form.saat3} onChange={e => set('saat3', e.target.value)}
+                  options={SAATLER.filter(s => !doluSaat3.includes(s)).map(s => ({ value:s, label: s }))} />
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      <div style={{ display:'flex', gap:10, marginTop:8 }}>
+        <Btn variant="secondary" onClick={onClose} style={{ flex:1 }}>İptal</Btn>
+        <Btn onClick={handleSubmit} disabled={saving} style={{ flex:2 }}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</Btn>
+      </div>
+    </div>
+  );
+};
+
+// ── PAKET YENİLEME ─────────────────────────────────────────────
+const PaketYenile = ({ ogrenci, mevcutOgrenciler, onSave, onClose }) => {
+  const [paket, setPaket] = useState(ogrenci.paket_tipi);
+  const [form, setForm] = useState({ gun1: ogrenci.gun1, saat1: ogrenci.saat1, gun2: ogrenci.gun2, saat2: ogrenci.saat2, gun3: ogrenci.gun3 || '', saat3: ogrenci.saat3 || '' });
+  const [saving, setSaving] = useState(false);
+  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave({ paket_tipi: paket, ...form });
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <div style={{ background:'rgba(200,149,108,0.1)', borderRadius:12, padding:14, marginBottom:20, border:'1px solid rgba(200,149,108,0.2)' }}>
+        <p style={{ color:'var(--gold)', fontSize:13, marginBottom:4 }}>Mevcut kalan ders: <strong>{ogrenci.kalan_ders}</strong></p>
+        <p style={{ color:'var(--text2)', fontSize:12 }}>Yeni paket mevcut kalanın üstüne eklenecek.</p>
+      </div>
+
+      <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Yeni Paket</label>
+        <div style={{ display:'flex', gap:10 }}>
+          {['8','12'].map(p => (
+            <button key={p} onClick={() => setPaket(p)} style={{ flex:1, padding:'12px', borderRadius:10, border:`1px solid ${paket===p?'var(--gold)':'var(--border)'}`, background:paket===p?'rgba(200,149,108,0.15)':'var(--bg3)', color:paket===p?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:16, fontWeight:600, cursor:'pointer' }}>
+              {p} Seans
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p style={{ fontSize:12, color:'var(--text2)', marginBottom:12 }}>Gün/saatleri aynı tutmak istiyorsan değiştirmeden kaydet.</p>
+      <Select label="Gün 1" value={form.gun1} onChange={e => set('gun1', e.target.value)} options={GUNLER} />
+      <Select label="Saat 1" value={form.saat1} onChange={e => set('saat1', e.target.value)} options={SAATLER} />
+      <Select label="Gün 2" value={form.gun2} onChange={e => set('gun2', e.target.value)} options={GUNLER} />
+      <Select label="Saat 2" value={form.saat2} onChange={e => set('saat2', e.target.value)} options={SAATLER} />
+      {paket === '12' && <>
+        <Select label="Gün 3" value={form.gun3} onChange={e => set('gun3', e.target.value)} options={GUNLER} />
+        <Select label="Saat 3" value={form.saat3} onChange={e => set('saat3', e.target.value)} options={SAATLER} />
+      </>}
+
+      <div style={{ display:'flex', gap:10, marginTop:16 }}>
+        <Btn variant="secondary" onClick={onClose} style={{ flex:1 }}>İptal</Btn>
+        <Btn onClick={handleSave} disabled={saving} style={{ flex:2 }}>{saving ? 'Yenileniyor...' : '🔄 Paketi Yenile'}</Btn>
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════
+// SAYFALAR
+// ══════════════════════════════════════════════════════════════
+
+// ── ANA SAYFA ──────────────────────────────────────────────────
+const AnaSayfa = ({ ogrenciler, loading }) => {
+  const bugun = new Date().toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const sonDers = ogrenciler.filter(o => o.kalan_ders === 1);
+  const aktif = ogrenciler.filter(o => o.kalan_ders > 0);
+
+  return (
+    <div style={{ flex:1, overflowY:'auto', padding:'0 0 100px' }}>
+      {/* Hero */}
+      <div style={{ position:'relative', padding:'50px 24px 40px', textAlign:'center', overflow:'hidden' }}>
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 0%, rgba(200,149,108,0.12) 0%, transparent 70%)' }} />
+        <div style={{ width:100, height:100, borderRadius:'50%', background:'linear-gradient(135deg, #2a1a12, #3a2518)', border:'1px solid var(--border)', margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+          <span style={{ fontFamily:'Cormorant Garamond', fontSize:28, color:'var(--gold)', fontStyle:'italic', letterSpacing:1 }}>gg</span>
+        </div>
+        <h1 style={{ fontFamily:'Cormorant Garamond', fontSize:32, fontWeight:400, color:'var(--cream)', letterSpacing:2, marginBottom:6 }}>GG Studio</h1>
+        <p style={{ color:'var(--text2)', fontSize:13, letterSpacing:1, textTransform:'uppercase' }}>{bugun}</p>
+      </div>
+
+      {/* İstatistikler */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, padding:'0 20px 20px' }}>
+        {[
+          { label:'Aktif Öğrenci', value: loading ? '—' : aktif.length, color:'var(--gold)' },
+          { label:'Son Dersi', value: loading ? '—' : sonDers.length, color: sonDers.length > 0 ? 'var(--red)' : 'var(--text2)' },
+        ].map(s => (
+          <div key={s.label} style={{ background:'var(--card)', borderRadius:14, padding:'18px 16px', border:`1px solid var(--border)` }}>
+            <p style={{ fontSize:30, fontFamily:'Cormorant Garamond', fontWeight:500, color:s.color, marginBottom:4 }}>{s.value}</p>
+            <p style={{ fontSize:11, color:'var(--text2)', letterSpacing:1, textTransform:'uppercase' }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Son Ders Uyarısı */}
+      {sonDers.length > 0 && (
+        <div style={{ margin:'0 20px 20px', background:'rgba(192,80,58,0.08)', border:'1px solid rgba(192,80,58,0.25)', borderRadius:14, padding:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+            <Icon name="alert" size={16} color="var(--red)" />
+            <span style={{ fontSize:11, letterSpacing:2, color:'var(--red)', textTransform:'uppercase', fontWeight:500 }}>Son Ders Uyarısı</span>
+          </div>
+          {sonDers.map(o => (
+            <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid rgba(192,80,58,0.1)' }}>
+              <span style={{ color:'var(--cream)', fontSize:15 }}>{o.ad_soyad}</span>
+              <span style={{ fontSize:11, color:'var(--red)', background:'rgba(192,80,58,0.15)', padding:'3px 10px', borderRadius:20 }}>1 ders kaldı</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tüm öğrenciler özet */}
+      {!loading && aktif.length === 0 && (
+        <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
+          <p style={{ fontSize:40, marginBottom:12 }}>🌿</p>
+          <p style={{ fontFamily:'Cormorant Garamond', fontSize:20, color:'var(--text2)' }}>Henüz öğrenci eklenmemiş</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── ÖĞRENCİLER ────────────────────────────────────────────────
+const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  const filtered = ogrenciler.filter(o =>
+    o.ad_soyad?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleAdd = async (form) => {
+    const r = await api('addOgrenci', {}, form);
+    if (r.success) { showToast('Öğrenci eklendi!', 'success'); setShowForm(false); reload(); }
+    else showToast(r.error || 'Hata', 'error');
+  };
+
+  if (selected) return <OgrenciDetay ogrenci={selected} ogrenciler={ogrenciler} onBack={() => { setSelected(null); reload(); }} showToast={showToast} reload={reload} />;
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ padding:'20px 20px 12px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1 }}>Öğrenciler</h2>
+          <button onClick={() => setShowForm(true)} style={{ background:`linear-gradient(135deg, var(--gold), var(--gold2))`, border:'none', borderRadius:12, padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:'var(--bg)', fontFamily:'Jost', fontSize:13, fontWeight:600 }}>
+            <Icon name="plus" size={16} color="var(--bg)" /> Ekle
+          </button>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:`1px solid var(--border)`, borderRadius:12, padding:'10px 14px', gap:10 }}>
+          <Icon name="search" size={16} color="var(--text3)" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Öğrenci ara..." style={{ background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:15, flex:1, fontFamily:'Jost' }} />
+        </div>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'0 20px 100px' }}>
+        {loading ? <Loader /> : filtered.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 0', color:'var(--text3)' }}>
+            <p style={{ fontSize:40, marginBottom:12 }}>🔍</p>
+            <p style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--text2)' }}>Öğrenci bulunamadı</p>
+          </div>
+        ) : filtered.map(o => (
+          <div key={o.id} onClick={() => setSelected(o)} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'var(--card)', border:`1px solid var(--border)`, borderRadius:14, padding:'14px 16px', marginBottom:10, cursor:'pointer', transition:'all 0.2s' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', background:`linear-gradient(135deg, var(--bg3), var(--border))`, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid var(--border)` }}>
+                <span style={{ fontFamily:'Cormorant Garamond', fontSize:16, color:'var(--gold)', fontWeight:500 }}>{o.ad_soyad?.[0]}</span>
+              </div>
+              <div>
+                <p style={{ fontSize:15, color:'var(--cream)', fontWeight:500, marginBottom:2 }}>{o.ad_soyad}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans · {o.gun1} {o.saat1}</p>
+              </div>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontSize:12, padding:'4px 10px', borderRadius:20, background: o.kalan_ders <= 1 ? 'rgba(192,80,58,0.15)' : 'rgba(74,158,110,0.15)', color: o.kalan_ders <= 1 ? 'var(--red)' : 'var(--green)', fontWeight:500 }}>
+                {o.kalan_ders} ders
+              </span>
+              <Icon name="chevron" size={16} color="var(--text3)" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showForm && (
+        <Modal title="Öğrenci Ekle" onClose={() => setShowForm(false)}>
+          <OgrenciForm onSave={handleAdd} onClose={() => setShowForm(false)} mevcutOgrenciler={ogrenciler} />
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+// ── ÖĞRENCİ DETAY ─────────────────────────────────────────────
+const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, reload }) => {
+  const [ogrenci, setOgrenci] = useState(initialOgrenci);
+  const [yoklama, setYoklama] = useState([]);
+  const [loadingY, setLoadingY] = useState(true);
+  const [showYenile, setShowYenile] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+
+  useEffect(() => {
+    api('getYoklama', { ogrenci_id: ogrenci.id }).then(data => {
+      setYoklama(Array.isArray(data) ? data.reverse() : []);
+      setLoadingY(false);
+    });
+  }, [ogrenci.id]);
+
+  const refreshOgrenci = async () => {
+    const data = await api('getOgrenci', { id: ogrenci.id });
+    if (data) setOgrenci(data);
+  };
+
+  const handleYenile = async (form) => {
+    const toplam = Number(form.paket_tipi);
+    const r = await api('updateOgrenci', {}, {
+      id: ogrenci.id,
+      paket_tipi: form.paket_tipi,
+      kalan_ders: ogrenci.kalan_ders + toplam,
+      toplam_ders: toplam,
+      gun1: form.gun1, saat1: form.saat1,
+      gun2: form.gun2, saat2: form.saat2,
+      gun3: form.gun3 || '', saat3: form.saat3 || '',
+    });
+    if (r.success) { showToast('Paket yenilendi!', 'success'); setShowYenile(false); refreshOgrenci(); reload(); }
+    else showToast(r.error || 'Hata', 'error');
+  };
+
+  const handleEdit = async (form) => {
+    const r = await api('updateOgrenci', {}, { id: ogrenci.id, ...form });
+    if (r.success) { showToast('Güncellendi!', 'success'); setShowEdit(false); refreshOgrenci(); reload(); }
+    else showToast(r.error || 'Hata', 'error');
+  };
+
+  const handleDelete = async () => {
+    const r = await api('deleteOgrenci', { id: ogrenci.id });
+    if (r.success) { showToast('Öğrenci silindi', 'success'); onBack(); }
+    else showToast(r.error || 'Hata', 'error');
+  };
+
+  const durumRenk = (d) => d === 'katildi' ? 'var(--green)' : d === 'telafi' ? 'var(--gold)' : 'var(--red)';
+  const durumLabel = (d) => d === 'katildi' ? '✓ Katıldı' : d === 'telafi' ? '↺ Telafi' : '✗ Katılmadı';
+
+  const pct = ogrenci.toplam_ders > 0 ? ((ogrenci.toplam_ders - ogrenci.kalan_ders) / ogrenci.toplam_ders) * 100 : 0;
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      {/* Header */}
+      <div style={{ padding:'20px 20px 0', display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', padding:4, color:'var(--text2)' }}>
+          <Icon name="back" size={22} />
+        </button>
+        <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:24, fontWeight:400, color:'var(--cream)', flex:1 }}>{ogrenci.ad_soyad}</h2>
+        <button onClick={() => setShowEdit(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text2)', padding:4 }}><Icon name="edit" size={18} /></button>
+        <button onClick={() => setShowDelete(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--red)', padding:4 }}><Icon name="trash" size={18} /></button>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'16px 20px 100px' }}>
+        {/* Kalan ders kartı */}
+        <div style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:16, padding:20, marginBottom:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
+            <div>
+              <p style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:4 }}>Kalan Ders</p>
+              <p style={{ fontFamily:'Cormorant Garamond', fontSize:44, fontWeight:500, color: ogrenci.kalan_ders <= 1 ? 'var(--red)' : 'var(--gold)', lineHeight:1 }}>{ogrenci.kalan_ders}</p>
+              <p style={{ fontSize:12, color:'var(--text2)', marginTop:4 }}>/ {ogrenci.toplam_ders} seans</p>
+            </div>
+            <button onClick={() => setShowYenile(true)} style={{ background:'rgba(200,149,108,0.15)', border:'1px solid rgba(200,149,108,0.3)', borderRadius:12, padding:'10px 14px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+              <Icon name="refresh" size={14} color="var(--gold)" /> Yenile
+            </button>
+          </div>
+          {/* Progress bar */}
+          <div style={{ background:'var(--bg3)', borderRadius:4, height:6, overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg, var(--gold), var(--gold2))`, borderRadius:4, transition:'width 0.5s' }} />
+          </div>
+        </div>
+
+        {/* Bilgiler */}
+        <div style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:16, padding:20, marginBottom:16 }}>
+          <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Bilgiler</p>
+          {[
+            { l:'TC Kimlik', v: ogrenci.tc_kimlik },
+            { l:'Doğum Tarihi', v: ogrenci.dogum_tarihi },
+            { l:'Paket', v: `${ogrenci.paket_tipi} seans` },
+            { l:'Kayıt', v: ogrenci.kayit_tarihi },
+          ].filter(x => x.v).map(x => (
+            <div key={x.l} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
+              <span style={{ fontSize:12, color:'var(--text2)' }}>{x.l}</span>
+              <span style={{ fontSize:14, color:'var(--cream)' }}>{x.v}</span>
+            </div>
+          ))}
+          {/* Telefon */}
+          {ogrenci.telefon && (
+            <a href={`tel:${ogrenci.telefon}`} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', textDecoration:'none' }}>
+              <span style={{ fontSize:12, color:'var(--text2)' }}>Telefon</span>
+              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--gold)', fontSize:14 }}>
+                {ogrenci.telefon} <Icon name="phone" size={14} color="var(--gold)" />
+              </span>
+            </a>
+          )}
+        </div>
+
+        {/* Program */}
+        <div style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:16, padding:20, marginBottom:16 }}>
+          <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Ders Programı</p>
+          {[[ogrenci.gun1, ogrenci.saat1],[ogrenci.gun2, ogrenci.saat2],[ogrenci.gun3, ogrenci.saat3]].filter(([g]) => g).map(([g,s], i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--gold)' }} />
+              <span style={{ color:'var(--cream)', fontSize:14 }}>{g}</span>
+              <span style={{ marginLeft:'auto', color:'var(--gold2)', fontSize:14, fontWeight:500 }}>{s}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Yoklama geçmişi */}
+        <div style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:16, padding:20 }}>
+          <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Yoklama Geçmişi</p>
+          {loadingY ? <Loader /> : yoklama.length === 0 ? (
+            <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'20px 0' }}>Henüz yoklama kaydı yok</p>
+          ) : yoklama.map(y => (
+            <div key={y.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+              <div>
+                <p style={{ fontSize:13, color:'var(--cream)', marginBottom:2 }}>{y.tarih} — {y.gun}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{y.saat}</p>
+              </div>
+              <span style={{ fontSize:12, padding:'3px 10px', borderRadius:20, background:`${durumRenk(y.durum)}22`, color:durumRenk(y.durum) }}>
+                {durumLabel(y.durum)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {showYenile && <Modal title="Paket Yenile" onClose={() => setShowYenile(false)}><PaketYenile ogrenci={ogrenci} mevcutOgrenciler={ogrenciler} onSave={handleYenile} onClose={() => setShowYenile(false)} /></Modal>}
+      {showEdit && <Modal title="Öğrenciyi Düzenle" onClose={() => setShowEdit(false)}><OgrenciForm initial={ogrenci} onSave={handleEdit} onClose={() => setShowEdit(false)} mevcutOgrenciler={ogrenciler} /></Modal>}
+      {showDelete && (
+        <Modal title="Öğrenciyi Sil" onClose={() => setShowDelete(false)}>
+          <p style={{ color:'var(--text2)', marginBottom:20 }}><strong style={{ color:'var(--cream)' }}>{ogrenci.ad_soyad}</strong> adlı öğrenciyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+          <div style={{ display:'flex', gap:10 }}>
+            <Btn variant="secondary" onClick={() => setShowDelete(false)} style={{ flex:1 }}>Vazgeç</Btn>
+            <Btn variant="danger" onClick={handleDelete} style={{ flex:1 }}>Sil</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+// ── DERS PROGRAMI ──────────────────────────────────────────────
+const DersProgrami = ({ loading }) => {
+  const [program, setProgram] = useState(null);
+  const [loadingP, setLoadingP] = useState(true);
+  const [detail, setDetail] = useState(null);
+
+  useEffect(() => {
+    api('getDersProgrami').then(d => { setProgram(d); setLoadingP(false); });
+  }, []);
+
+  const durumStyle = (durum) => {
+    if (durum === 'bos')   return { bg:'rgba(74,158,110,0.2)', border:'rgba(74,158,110,0.4)', dot:'var(--green)' };
+    if (durum === 'eksik') return { bg:'rgba(192,80,58,0.2)', border:'rgba(192,80,58,0.4)', dot:'var(--red)' };
+    return { bg:'rgba(240,230,216,0.1)', border:'rgba(240,230,216,0.3)', dot:'var(--cream)' };
+  };
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ padding:'20px 20px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1 }}>Ders Programı</h2>
+      </div>
+      {/* Lejant */}
+      <div style={{ padding:'0 20px 12px', display:'flex', gap:14 }}>
+        {[['var(--green)','Boş'],['var(--red)','Eksik'],['var(--cream)','Dolu']].map(([c,l]) => (
+          <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:c }} />
+            <span style={{ fontSize:11, color:'var(--text2)', letterSpacing:1 }}>{l}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'0 20px 100px' }}>
+        {loadingP ? <Loader /> : !program ? null : GUNLER.map(gun => (
+          <div key={gun} style={{ marginBottom:20 }}>
+            <p style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--gold2)', marginBottom:10, letterSpacing:1 }}>{gun}</p>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
+              {SAATLER.map(saat => {
+                const slot = program[gun]?.[saat] || { durum:'bos', ogrenciler:[], sayi:0 };
+                const st = durumStyle(slot.durum);
+                return (
+                  <div key={saat} onClick={() => slot.sayi > 0 && setDetail({ gun, saat, slot })} style={{ background:st.bg, border:`1px solid ${st.border}`, borderRadius:12, padding:'12px 8px', textAlign:'center', cursor:slot.sayi>0?'pointer':'default' }}>
+                    <div style={{ width:10, height:10, borderRadius:'50%', background:st.dot, margin:'0 auto 6px' }} />
+                    <p style={{ fontSize:13, color:'var(--cream)', fontWeight:500 }}>{saat}</p>
+                    <p style={{ fontSize:11, color:'var(--text2)', marginTop:2 }}>{slot.sayi}/5</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {detail && (
+        <Modal title={`${detail.gun} ${detail.saat}`} onClose={() => setDetail(null)}>
+          {detail.slot.ogrenciler.map(o => (
+            <div key={o.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <span style={{ fontFamily:'Cormorant Garamond', fontSize:15, color:'var(--gold)' }}>{o.ad_soyad[0]}</span>
+              </div>
+              <span style={{ color:'var(--cream)', fontSize:15 }}>{o.ad_soyad}</span>
+            </div>
+          ))}
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+// ── YOKLAMA ────────────────────────────────────────────────────
+const Yoklama = ({ ogrenciler, showToast }) => {
+  const [gun, setGun] = useState('');
+  const [saat, setSaat] = useState('');
+  const [kayitlar, setKayitlar] = useState({});
+  const [mevcutYoklama, setMevcutYoklama] = useState([]);
+  const [saving, setSaving] = useState({});
+  const [search, setSearch] = useState('');
+
+  const bugunGun = () => {
+    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    return gunler[new Date().getDay()];
+  };
+
+  // O gün+saate kayıtlı öğrenciler
+  const kayitliOgrenciler = ogrenciler.filter(o => {
+    if (!gun || !saat) return false;
+    if (o.kalan_ders <= 0) return false;
+    return (o.gun1===gun && o.saat1===saat) || (o.gun2===gun && o.saat2===saat) || (o.gun3===gun && o.saat3===saat);
+  }).filter(o => o.ad_soyad?.toLowerCase().includes(search.toLowerCase()));
+
+  // Mevcut yoklamayı yükle
+  useEffect(() => {
+    if (!gun || !saat) return;
+    api('getYoklamaByGunSaat', { gun, saat }).then(data => {
+      if (Array.isArray(data)) {
+        const map = {};
+        data.forEach(y => { map[y.ogrenci_id] = y; });
+        setMevcutYoklama(map);
+        const k = {};
+        data.forEach(y => { k[y.ogrenci_id] = y.durum; });
+        setKayitlar(k);
+      }
+    });
+  }, [gun, saat]);
+
+  const handleYoklama = async (ogrenci, durum) => {
+    setSaving(s => ({ ...s, [ogrenci.id]: true }));
+    const tarih = new Date().toLocaleDateString('tr-TR');
+    const mevcut = mevcutYoklama[ogrenci.id];
+
+    let r;
+    if (mevcut) {
+      r = await api('updateYoklama', {}, { id: mevcut.id, durum });
+    } else {
+      r = await api('addYoklama', {}, { ogrenci_id: ogrenci.id, tarih, gun, saat, durum });
+    }
+
+    if (r.success) {
+      setKayitlar(k => ({ ...k, [ogrenci.id]: durum }));
+      if (!mevcut) {
+        const d = await api('getYoklamaByGunSaat', { gun, saat });
+        if (Array.isArray(d)) {
+          const map = {};
+          d.forEach(y => { map[y.ogrenci_id] = y; });
+          setMevcutYoklama(map);
+        }
+      }
+      showToast('Kaydedildi', 'success');
+    } else showToast(r.error || 'Hata', 'error');
+    setSaving(s => ({ ...s, [ogrenci.id]: false }));
+  };
+
+  const btnStyle = (active, type) => {
+    const colors = { katildi: 'var(--green)', katilmadi: 'var(--red)', telafi: 'var(--gold)' };
+    const c = colors[type];
+    return {
+      padding:'8px 10px', borderRadius:10, border:`1px solid ${active?c:'var(--border)'}`,
+      background: active ? `${c}22` : 'var(--bg3)', color: active ? c : 'var(--text3)',
+      fontFamily:'Jost', fontSize:11, fontWeight:active?600:400, cursor:'pointer', flex:1, letterSpacing:0.3,
+    };
+  };
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ padding:'20px 20px 12px' }}>
+        <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1, marginBottom:16 }}>Yoklama</h2>
+
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
+          <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
+            {GUNLER.map(g => (
+              <button key={g} onClick={() => { setGun(g); setSaat(''); setKayitlar({}); }} style={{ padding:'8px 14px', borderRadius:20, border:`1px solid ${gun===g?'var(--gold)':'var(--border)'}`, background:gun===g?'rgba(200,149,108,0.15)':'var(--card)', color:gun===g?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {gun && (
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Saat Seç</label>
+            <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
+              {SAATLER.map(s => (
+                <button key={s} onClick={() => setSaat(s)} style={{ padding:'8px 14px', borderRadius:20, border:`1px solid ${saat===s?'var(--gold)':'var(--border)'}`, background:saat===s?'rgba(200,149,108,0.15)':'var(--card)', color:saat===s?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {gun && saat && (
+          <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:`1px solid var(--border)`, borderRadius:12, padding:'10px 14px', gap:10 }}>
+            <Icon name="search" size={16} color="var(--text3)" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Öğrenci ara..." style={{ background:'none', border:'none', outline:'none', color:'var(--text)', fontSize:15, flex:1, fontFamily:'Jost' }} />
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'0 20px 100px' }}>
+        {!gun || !saat ? (
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
+            <p style={{ fontSize:40, marginBottom:12 }}>📋</p>
+            <p style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--text2)' }}>Gün ve saat seçin</p>
+          </div>
+        ) : kayitliOgrenciler.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 0', color:'var(--text3)' }}>
+            <p style={{ fontSize:40, marginBottom:12 }}>🌿</p>
+            <p style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--text2)' }}>Bu saatte kayıtlı öğrenci yok</p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:12 }}>{kayitliOgrenciler.length} öğrenci</p>
+            {kayitliOgrenciler.map(o => {
+              const mevcut = kayitlar[o.id];
+              return (
+                <div key={o.id} style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:14, padding:14, marginBottom:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                    <div style={{ width:36, height:36, borderRadius:'50%', background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <span style={{ fontFamily:'Cormorant Garamond', fontSize:15, color:'var(--gold)' }}>{o.ad_soyad[0]}</span>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontSize:15, color:'var(--cream)', fontWeight:500 }}>{o.ad_soyad}</p>
+                      <p style={{ fontSize:11, color:'var(--text2)' }}>{o.kalan_ders} ders kaldı</p>
+                    </div>
+                    {mevcut && <span style={{ fontSize:11, padding:'3px 8px', borderRadius:10, background:'rgba(200,149,108,0.15)', color:'var(--gold)' }}>✓ Kaydedildi</span>}
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {saving[o.id] ? <p style={{ color:'var(--text2)', fontSize:12, padding:'8px 0' }}>Kaydediliyor...</p> : (
+                      <>
+                        <button style={btnStyle(mevcut==='katildi','katildi')} onClick={() => handleYoklama(o, 'katildi')}>✓ Katıldı</button>
+                        <button style={btnStyle(mevcut==='katilmadi','katilmadi')} onClick={() => handleYoklama(o, 'katilmadi')}>✗ Gelmedi</button>
+                        <button style={btnStyle(mevcut==='telafi','telafi')} onClick={() => handleYoklama(o, 'telafi')}>↺ Telafi</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════
+// ANA APP
+// ══════════════════════════════════════════════════════════════
+const App = () => {
+  const [tab, setTab] = useState('ana');
+  const [ogrenciler, setOgrenciler] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+
+  const loadOgrenciler = useCallback(async () => {
+    setLoading(true);
+    const data = await api('getOgrenciler');
+    setOgrenciler(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadOgrenciler(); }, []);
+
+  const showToast = (msg, type = 'info') => setToast({ msg, type });
+
+  const tabs = [
+    { id:'ana', label:'Ana Sayfa', icon:'home' },
+    { id:'ogrenciler', label:'Öğrenciler', icon:'users' },
+    { id:'program', label:'Program', icon:'calendar' },
+    { id:'yoklama', label:'Yoklama', icon:'check' },
+  ];
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:'var(--bg)' }}>
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Content */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} />}
+        {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} />}
+        {tab === 'program' && <DersProgrami loading={loading} />}
+        {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} />}
+      </div>
+
+      {/* Bottom Nav */}
+      <div style={{ background:'var(--bg2)', borderTop:`1px solid var(--border)`, paddingBottom:'env(safe-area-inset-bottom)', display:'flex' }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:'12px 0 10px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.2s' }}>
+            <Icon name={t.icon} size={22} color={tab===t.id ? 'var(--gold)' : 'var(--text3)'} />
+            <span style={{ fontSize:10, letterSpacing:0.5, color:tab===t.id?'var(--gold)':'var(--text3)', fontWeight:tab===t.id?500:400 }}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
