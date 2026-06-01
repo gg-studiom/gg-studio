@@ -57,19 +57,19 @@ const GUNLER = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
 // Herhangi bir tarih formatını DD.MM.YYYY'e çevir
 function formatTarih(val) {
   if (!val) return '';
+  const s = String(val).trim();
   // Zaten DD.MM.YYYY formatındaysa olduğu gibi döndür
-  if (/^\d{2}\.\d{2}\.\d{4}$/.test(String(val))) return val;
-  // ISO veya başka format ise parse et
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(s)) return s;
+  // "Tue Jun 02 2026 ..." gibi uzun formatları da parse et
   try {
-    const d = new Date(val);
-    if (isNaN(d.getTime())) return String(val);
-    // 1899 yılı saatleri için (Excel/Sheets hatası) boş döndür
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
     if (d.getFullYear() < 1900) return '';
     const day = d.getDate().toString().padStart(2,'0');
     const month = (d.getMonth()+1).toString().padStart(2,'0');
     const year = d.getFullYear();
     return day + '.' + month + '.' + year;
-  } catch(e) { return String(val); }
+  } catch(e) { return s; }
 }
 
 // Saat değerini temizle (1899 tarihi gelirse boş döndür)
@@ -260,7 +260,7 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
 
           <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
             <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>2. Gün & Saat</p>
-            <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2', e.target.value); set('saat2', ''); }} options={GUNLER} />
+            <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2', e.target.value); set('saat2', ''); }} options={GUNLER.filter(g => g !== form.gun1)} />
             {form.gun2 && (
               <Select label="Saat 2 *" value={form.saat2} onChange={e => set('saat2', e.target.value)}
                 options={SAATLER.filter(s => !doluSaat2.includes(s)).map(s => ({ value:s, label: s }))} />
@@ -270,7 +270,7 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
           {form.paket_tipi === '12' && (
             <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
               <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>3. Gün & Saat</p>
-              <Select label="Gün 3 *" value={form.gun3} onChange={e => { set('gun3', e.target.value); set('saat3', ''); }} options={GUNLER} />
+              <Select label="Gün 3 *" value={form.gun3} onChange={e => { set('gun3', e.target.value); set('saat3', ''); }} options={GUNLER.filter(g => g !== form.gun1 && g !== form.gun2)} />
               {form.gun3 && (
                 <Select label="Saat 3 *" value={form.saat3} onChange={e => set('saat3', e.target.value)}
                   options={SAATLER.filter(s => !doluSaat3.includes(s)).map(s => ({ value:s, label: s }))} />
@@ -597,8 +597,8 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           ) : yoklama.map(y => (
             <div key={y.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
               <div>
-                <p style={{ fontSize:13, color:'var(--cream)', marginBottom:2 }}>{y.tarih} — {y.gun}</p>
-                <p style={{ fontSize:11, color:'var(--text2)' }}>{y.saat}</p>
+                <p style={{ fontSize:13, color:'var(--cream)', marginBottom:2 }}>{formatTarih(y.tarih)} — {y.gun}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{formatSaat(y.saat)}</p>
               </div>
               <span style={{ fontSize:12, padding:'3px 10px', borderRadius:20, background:`${durumRenk(y.durum)}18`, color:durumRenk(y.durum) }}>
                 {durumLabel(y.durum)}
