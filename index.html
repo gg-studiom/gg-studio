@@ -53,6 +53,41 @@ const { useState, useEffect, useCallback, useRef } = React;
 const API = 'https://script.google.com/macros/s/AKfycbwnFUWFEy7v5UoYksPLiJdx-5FLJ9_Eb8YjQou_kW7jUnc4ygZvnUTeyPnuMuc8UsPT/exec';
 
 const GUNLER = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+
+// Herhangi bir tarih formatını DD.MM.YYYY'e çevir
+function formatTarih(val) {
+  if (!val) return '';
+  // Zaten DD.MM.YYYY formatındaysa olduğu gibi döndür
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(String(val))) return val;
+  // ISO veya başka format ise parse et
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    // 1899 yılı saatleri için (Excel/Sheets hatası) boş döndür
+    if (d.getFullYear() < 1900) return '';
+    const day = d.getDate().toString().padStart(2,'0');
+    const month = (d.getMonth()+1).toString().padStart(2,'0');
+    const year = d.getFullYear();
+    return day + '.' + month + '.' + year;
+  } catch(e) { return String(val); }
+}
+
+// Saat değerini temizle (1899 tarihi gelirse boş döndür)
+function formatSaat(val) {
+  if (!val) return '';
+  if (/^\d{2}:\d{2}$/.test(String(val))) return val;
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    if (d.getFullYear() < 1900) {
+      // Excel saat değeri - UTC saatini al
+      const h = d.getUTCHours().toString().padStart(2,'0');
+      const m = d.getUTCMinutes().toString().padStart(2,'0');
+      return h + ':' + m;
+    }
+    return String(val);
+  } catch(e) { return String(val); }
+}
 const SAATLER = ['11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
 
 async function api(action, params = {}, body = null) {
@@ -411,7 +446,7 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
               </div>
               <div>
                 <p style={{ fontSize:15, color:'var(--cream)', fontWeight:500, marginBottom:2 }}>{o.ad_soyad}</p>
-                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans · {o.gun1} {o.saat1}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans · {o.gun1} {formatSaat(o.saat1)}</p>
               </div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -522,9 +557,9 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Bilgiler</p>
           {[
             { l:'TC Kimlik', v: ogrenci.tc_kimlik },
-            { l:'Doğum Tarihi', v: ogrenci.dogum_tarihi },
+            { l:'Doğum Tarihi', v: formatTarih(ogrenci.dogum_tarihi) },
             { l:'Paket', v: `${ogrenci.paket_tipi} seans` },
-            { l:'Kayıt', v: ogrenci.kayit_tarihi },
+            { l:'Kayıt', v: formatTarih(ogrenci.kayit_tarihi) },
           ].filter(x => x.v).map(x => (
             <div key={x.l} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
               <span style={{ fontSize:12, color:'var(--text2)' }}>{x.l}</span>
@@ -549,7 +584,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
             <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
               <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--gold)' }} />
               <span style={{ color:'var(--cream)', fontSize:14 }}>{g}</span>
-              <span style={{ marginLeft:'auto', color:'var(--gold2)', fontSize:14, fontWeight:500 }}>{s}</span>
+              <span style={{ marginLeft:'auto', color:'var(--gold2)', fontSize:14, fontWeight:500 }}>{formatSaat(s)}</span>
             </div>
           ))}
         </div>
@@ -681,7 +716,9 @@ const DersProgrami = ({ ogrenciler, loading }) => {
 };
 
 // ── YOKLAMA ────────────────────────────────────────────────────
-const Yoklama = ({ ogrenciler, showToast }) => {
+const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload }) => {
+  const [ogrenciler, setOgrenciler] = React.useState(ogrencilerProp);
+  React.useEffect(() => { setOgrenciler(ogrencilerProp); }, [ogrencilerProp]);
   const [gun, setGun] = useState('');
   const [saat, setSaat] = useState('');
   const [kayitlar, setKayitlar] = useState({});
@@ -743,6 +780,13 @@ const Yoklama = ({ ogrenciler, showToast }) => {
         }
       }
       showToast('Kaydedildi', 'success');
+      // Lokal state'i anında güncelle
+      if (durum !== 'telafi') {
+        setOgrenciler(prev => prev.map(o2 =>
+          o2.id === ogrenci.id ? { ...o2, kalan_ders: Math.max(0, o2.kalan_ders - 1) } : o2
+        ));
+      }
+      reload();
     } else showToast(r.error || 'Hata', 'error');
     setSaving(s => ({ ...s, [ogrenci.id]: false }));
   };
@@ -877,13 +921,13 @@ const App = () => {
         {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} />}
         {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} />}
         {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} />}
-        {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} />}
+        {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} reload={loadOgrenciler} />}
       </div>
 
       {/* Bottom Nav */}
       <div style={{ background:'var(--bg2)', borderTop:`1px solid var(--border)`, boxShadow:'0 -2px 20px rgba(61,31,13,0.08)', paddingBottom:'env(safe-area-inset-bottom)', display:'flex' }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:'12px 0 10px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.2s' }}>
+          <button key={t.id} onClick={() => { setTab(t.id); loadOgrenciler(); }} style={{ flex:1, padding:'12px 0 10px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.2s' }}>
             <Icon name={t.icon} size={22} color={tab===t.id ? 'var(--gold)' : 'var(--text3)'} />
             <span style={{ fontSize:10, letterSpacing:0.5, color:tab===t.id?'var(--gold)':'var(--text3)', fontWeight:tab===t.id?500:400 }}>{t.label}</span>
           </button>
