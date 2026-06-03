@@ -520,62 +520,78 @@ const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
   );
 };
 
-// ── ÖLÇÜM KARTI ──────────────────────────────────────────────
-const OlcumKarti = ({ olcum, index, onceki, onDelete }) => {
+// ── ÖLÇÜM TABLOSU ────────────────────────────────────────────
+const OlcumTablosu = ({ olcumler, onDelete }) => {
   const alanlar = [
     ['boy','Boy','cm'],['kilo','Kilo','kg'],['gogus','Göğüs','cm'],
     ['bel','Bel','cm'],['basen','Basen','cm'],['baldir','Baldır','cm'],
     ['pazi','Pazı','cm'],['yag','Yağ','%']
   ];
 
-  const fark = (k) => {
-    if (!onceki || !olcum[k] || !onceki[k]) return null;
-    const f = parseFloat(olcum[k]) - parseFloat(onceki[k]);
-    if (isNaN(f) || f === 0) return null;
-    return f;
+  const fark = (k, i) => {
+    if (i === 0 || !olcumler[i][k] || !olcumler[i-1][k]) return null;
+    const f = parseFloat(olcumler[i][k]) - parseFloat(olcumler[i-1][k]);
+    return isNaN(f) || f === 0 ? null : f;
   };
 
   return (
-    <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, marginBottom:12, overflow:'hidden' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid var(--border)', background:'rgba(139,58,31,0.05)' }}>
-        <div>
-          <p style={{ fontFamily:'Cormorant Garamond', fontSize:16, fontWeight:500, color:'var(--gold)' }}>{index + 1}. Ölçüm</p>
-          <p style={{ fontSize:11, color:'var(--text2)', marginTop:2 }}>{olcum.tarih}</p>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:11, background:'rgba(139,58,31,0.1)', color:'var(--gold)', padding:'3px 10px', borderRadius:20 }}>
-            {index === 0 ? 'İlk Kayıt' : 'Paket Yenileme'}
-          </span>
-          <button onClick={() => onDelete(olcum.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4 }}>
-            <Icon name="trash" size={14} />
-          </button>
-        </div>
-      </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
-        {alanlar.map(([k, l, u], i) => {
-          const f = fark(k);
-          const isLast2 = i >= alanlar.length - 2;
-          return olcum[k] ? (
-            <div key={k} style={{ padding:'10px 16px', borderBottom: isLast2 ? 'none' : '1px solid var(--border)', borderRight: i%2===0 ? '1px solid var(--border)' : 'none' }}>
-              <p style={{ fontSize:10, letterSpacing:1, color:'var(--text3)', textTransform:'uppercase', marginBottom:3 }}>{l}</p>
-              <p style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>
-                {u === '%' ? '%' : ''}{olcum[k]} <span style={{ fontSize:11, color:'var(--text2)' }}>{u !== '%' ? u : ''}</span>
-                {f !== null && <span style={{ fontSize:11, marginLeft:4, color: f < 0 ? 'var(--green)' : 'var(--red)', fontWeight:600 }}>
-                  {f < 0 ? '▼' : '▲'}{Math.abs(f).toFixed(1)}
-                </span>}
-              </p>
-            </div>
-          ) : null;
-        })}
-      </div>
-      {olcum.notlar && (
-        <div style={{ padding:'10px 16px', borderTop:'1px solid var(--border)', fontSize:13, color:'var(--text2)', fontStyle:'italic' }}>
-          💬 {olcum.notlar}
-        </div>
-      )}
+    <div style={{ overflowX:'auto', borderRadius:14, border:'1px solid var(--border)' }}>
+      <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+        <thead>
+          <tr style={{ background:'rgba(139,58,31,0.06)' }}>
+            <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, letterSpacing:1, color:'var(--gold)', fontWeight:500, textTransform:'uppercase', borderBottom:'1px solid var(--border)', minWidth:80 }}>Ölçüm</th>
+            {olcumler.map((o, i) => (
+              <th key={o.id} style={{ padding:'10px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', borderLeft:'1px solid var(--border)', minWidth:90 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  <div>
+                    <p style={{ fontFamily:'Cormorant Garamond', fontSize:14, fontWeight:500, color:'var(--gold)', margin:0 }}>{i+1}. Ölçüm</p>
+                    <p style={{ fontSize:10, color:'var(--text2)', margin:0 }}>{o.tarih}</p>
+                  </div>
+                  <button onClick={() => onDelete(o.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:2, flexShrink:0 }}>
+                    <Icon name="trash" size={12} />
+                  </button>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {alanlar.map(([k, l, u]) => (
+            <tr key={k} style={{ borderBottom:'1px solid var(--border)' }}>
+              <td style={{ padding:'10px 14px', fontSize:11, letterSpacing:1, color:'var(--text2)', textTransform:'uppercase', background:'rgba(139,58,31,0.03)', fontWeight:500 }}>{l}</td>
+              {olcumler.map((o, i) => {
+                const f = fark(k, i);
+                return (
+                  <td key={o.id} style={{ padding:'10px 12px', textAlign:'center', borderLeft:'1px solid var(--border)', color:'var(--text)', fontWeight:500 }}>
+                    {o[k] ? (
+                      <span>
+                        {u === '%' ? '%' : ''}{o[k]}{u !== '%' ? <span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}> {u}</span> : ''}
+                        {f !== null && <span style={{ display:'block', fontSize:11, color: f < 0 ? 'var(--green)' : 'var(--red)', fontWeight:600 }}>
+                          {f < 0 ? '▼' : '▲'}{Math.abs(f).toFixed(1)}
+                        </span>}
+                      </span>
+                    ) : <span style={{ color:'var(--text3)' }}>—</span>}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+          {/* Notlar */}
+          <tr>
+            <td style={{ padding:'10px 14px', fontSize:11, letterSpacing:1, color:'var(--text2)', textTransform:'uppercase', background:'rgba(139,58,31,0.03)', fontWeight:500 }}>Notlar</td>
+            {olcumler.map(o => (
+              <td key={o.id} style={{ padding:'10px 12px', textAlign:'center', borderLeft:'1px solid var(--border)', fontSize:12, color:'var(--text2)', fontStyle:'italic' }}>
+                {o.notlar || '—'}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };
+
+const OlcumKarti = ({ olcum, index, onceki, onDelete }) => null;
 
 // ── ÖĞRENCİ DETAY ─────────────────────────────────────────────
 const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, reload }) => {
@@ -726,9 +742,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           </div>
           {olcumler.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'12px 0' }}>Henüz ölçüm girilmemiş</p>
-          ) : olcumler.map((o, i) => (
-            <OlcumKarti key={o.id} olcum={o} index={i} onceki={i > 0 ? olcumler[i-1] : null} onDelete={handleDeleteOlcum} />
-          ))}
+          ) : <OlcumTablosu olcumler={olcumler} onDelete={handleDeleteOlcum} />}
         </div>
 
         {/* Yoklama geçmişi */}
