@@ -117,6 +117,7 @@ const Icon = ({ name, size = 20, color = 'currentColor' }) => {
     users: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
     calendar: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>,
+    chart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
     plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
     x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
     phone: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
@@ -408,7 +409,7 @@ const AnaSayfa = ({ ogrenciler, loading }) => {
 };
 
 // ── ÖĞRENCİLER ────────────────────────────────────────────────
-const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
+const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar }) => {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -423,7 +424,7 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
     else showToast(r.error || 'Hata', 'error');
   };
 
-  if (selected) return <OgrenciDetay ogrenci={selected} ogrenciler={ogrenciler} onBack={() => { setSelected(null); reload(); }} showToast={showToast} reload={reload} />;
+  if (selected) return <OgrenciDetay ogrenci={selected} ogrenciler={ogrenciler} onBack={() => { setSelected(null); reload(); }} showToast={showToast} reload={reload} ayarlar={ayarlar} />;
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -476,6 +477,173 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
   );
 };
 
+
+
+// ── ÖDEME FORMU ───────────────────────────────────────────────
+const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
+  const bugun = new Date().toISOString().split('T')[0];
+  const fiyat = ogrenci.paket_tipi === '8' ? (ayarlar.fiyat_8 || 3000) : (ayarlar.fiyat_12 || 4500);
+  const [form, setForm] = React.useState({
+    tarih: bugun, tutar: String(fiyat), notlar: ''
+  });
+  const [saving, setSaving] = React.useState(false);
+  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+
+  const handleSave = async () => {
+    setSaving(true);
+    const tarihFormatted = new Date(form.tarih).toLocaleDateString('tr-TR');
+    const r = await api('addOdeme', {}, {
+      ogrenci_id: ogrenci.id,
+      ogrenci_ad: ogrenci.ad_soyad,
+      tarih: tarihFormatted,
+      tutar: Number(form.tutar),
+      paket_tipi: ogrenci.paket_tipi,
+      notlar: form.notlar
+    });
+    if (r.success) onSave();
+    else alert(r.error || 'Hata');
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <div style={{ background:'rgba(61,122,85,0.08)', border:'1px solid rgba(61,122,85,0.2)', borderRadius:12, padding:14, marginBottom:16 }}>
+        <p style={{ fontSize:12, color:'var(--green)', marginBottom:2 }}>{ogrenci.ad_soyad}</p>
+        <p style={{ fontSize:11, color:'var(--text2)' }}>{ogrenci.paket_tipi} seanslık paket · Standart fiyat: <strong>{fiyat.toLocaleString('tr-TR')} ₺</strong></p>
+      </div>
+      <Input label="Ödeme Tarihi" type="date" value={form.tarih} onChange={e => set('tarih', e.target.value)} />
+      <Input label="Tutar (₺)" value={form.tutar} onChange={e => set('tutar', e.target.value)} inputMode="numeric" />
+      <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>Notlar</label>
+        <textarea value={form.notlar} onChange={e => set('notlar', e.target.value)} rows={2}
+          style={{ width:'100%', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'12px 14px', color:'var(--text)', fontSize:14, fontFamily:'Jost', resize:'none' }}
+          placeholder="Ödeme notu..." />
+      </div>
+      <div style={{ display:'flex', gap:10 }}>
+        <Btn variant="secondary" onClick={onClose} style={{ flex:1 }}>İptal</Btn>
+        <Btn onClick={handleSave} disabled={saving} style={{ flex:2 }}>{saving ? 'Kaydediliyor...' : '💰 Ödeme Kaydet'}</Btn>
+      </div>
+    </div>
+  );
+};
+
+// ── CİRO SAYFASI ─────────────────────────────────────────────
+const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
+  const [ozet, setOzet] = React.useState(null);
+  const [tumOdemeler, setTumOdemeler] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [showFiyat, setShowFiyat] = React.useState(false);
+  const [fiyat8, setFiyat8] = React.useState(String(ayarlar.fiyat_8 || 3000));
+  const [fiyat12, setFiyat12] = React.useState(String(ayarlar.fiyat_12 || 4500));
+
+  const load = async () => {
+    setLoading(true);
+    const [o, p] = await Promise.all([
+      api('getCiroOzet'),
+      api('getOdemeler', {})
+    ]);
+    setOzet(o);
+    setTumOdemeler(Array.isArray(p) ? p.reverse() : []);
+    setLoading(false);
+  };
+
+  React.useEffect(() => { load(); }, []);
+
+  const handleFiyatKaydet = async () => {
+    await Promise.all([
+      api('updateAyar', {}, { anahtar: 'fiyat_8', deger: Number(fiyat8) }),
+      api('updateAyar', {}, { anahtar: 'fiyat_12', deger: Number(fiyat12) })
+    ]);
+    showToast('Fiyatlar güncellendi!', 'success');
+    setShowFiyat(false);
+  };
+
+  const handleDeleteOdeme = async (id) => {
+    const r = await api('deleteOdeme', { id });
+    if (r.success) { showToast('Ödeme silindi', 'success'); load(); }
+  };
+
+  const maxTutar = ozet ? Math.max(...ozet.son6Ay.map(a => a.tutar), 1) : 1;
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ padding:'20px 20px 12px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--text)', letterSpacing:1 }}>Ciro</h2>
+        <button onClick={() => setShowFiyat(true)} style={{ background:'rgba(139,58,31,0.1)', border:'1px solid rgba(139,58,31,0.2)', borderRadius:12, padding:'8px 14px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:13 }}>
+          ⚙️ Fiyatlar
+        </button>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'0 20px 100px' }}>
+        {loading ? <Loader /> : !ozet ? null : <>
+
+          {/* Özet kartlar */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
+            {[
+              { l:'Bu Ay', v:`${ozet.buAyCiro.toLocaleString('tr-TR')} ₺`, c:'var(--green)' },
+              { l:'Toplam', v:`${ozet.toplamCiro.toLocaleString('tr-TR')} ₺`, c:'var(--gold)' },
+            ].map(s => (
+              <div key={s.l} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:'16px' }}>
+                <p style={{ fontSize:11, color:'var(--text2)', letterSpacing:1, textTransform:'uppercase', marginBottom:6 }}>{s.l}</p>
+                <p style={{ fontFamily:'Cormorant Garamond', fontSize:24, fontWeight:500, color:s.c }}>{s.v}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Son 6 ay grafik */}
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:16 }}>Son 6 Ay</p>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:8, height:100 }}>
+              {ozet.son6Ay.map(a => (
+                <div key={a.anahtar} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                  <p style={{ fontSize:10, color:'var(--text2)' }}>{a.tutar > 0 ? `${(a.tutar/1000).toFixed(1)}k` : ''}</p>
+                  <div style={{ width:'100%', background: a.tutar > 0 ? 'linear-gradient(to top, #8b3a1f, #a04828)' : 'var(--border)', borderRadius:'4px 4px 0 0', height:`${Math.max((a.tutar/maxTutar)*80, a.tutar>0?4:2)}px`, transition:'height 0.5s' }} />
+                  <p style={{ fontSize:9, color:'var(--text3)', textAlign:'center' }}>{a.ayAdi.split(' ')[0]}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tüm ödemeler listesi */}
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:16 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Tüm Ödemeler ({tumOdemeler.length})</p>
+            {tumOdemeler.length === 0 ? (
+              <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'20px 0' }}>Henüz ödeme kaydı yok</p>
+            ) : tumOdemeler.map(o => (
+              <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+                <div>
+                  <p style={{ fontSize:14, color:'var(--text)', fontWeight:500, marginBottom:2 }}>{o.ogrenci_ad}</p>
+                  <p style={{ fontSize:11, color:'var(--text2)' }}>{o.tarih} · {o.paket_tipi} seans{o.notlar ? ` · ${o.notlar}` : ''}</p>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--green)', fontWeight:500 }}>{Number(o.tutar).toLocaleString('tr-TR')} ₺</span>
+                  <button onClick={() => handleDeleteOdeme(o.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4 }}>
+                    <Icon name="trash" size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>}
+      </div>
+
+      {/* Fiyat düzenleme modal */}
+      {showFiyat && (
+        <Modal title="Fiyat Ayarları" onClose={() => setShowFiyat(false)}>
+          <div style={{ background:'rgba(139,58,31,0.06)', borderRadius:12, padding:14, marginBottom:16 }}>
+            <p style={{ fontSize:12, color:'var(--text2)' }}>Fiyatları değiştirince yeni kayıtlarda otomatik uygulanır.</p>
+          </div>
+          <Input label="8 Seans Paketi (₺)" value={fiyat8} onChange={e => setFiyat8(e.target.value)} inputMode="numeric" />
+          <Input label="12 Seans Paketi (₺)" value={fiyat12} onChange={e => setFiyat12(e.target.value)} inputMode="numeric" />
+          <div style={{ display:'flex', gap:10 }}>
+            <Btn variant="secondary" onClick={() => setShowFiyat(false)} style={{ flex:1 }}>İptal</Btn>
+            <Btn onClick={handleFiyatKaydet} style={{ flex:2 }}>Kaydet</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
 
 // ── ÖLÇÜM FORMU ───────────────────────────────────────────────
 const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
@@ -599,12 +767,14 @@ const OlcumTablosu = ({ olcumler, onDelete }) => {
 const OlcumKarti = ({ olcum, index, onceki, onDelete }) => null;
 
 // ── ÖĞRENCİ DETAY ─────────────────────────────────────────────
-const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, reload }) => {
+const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, reload, ayarlar }) => {
   const [ogrenci, setOgrenci] = useState(initialOgrenci);
   const [yoklama, setYoklama] = useState([]);
   const [loadingY, setLoadingY] = useState(true);
   const [olcumler, setOlcumler] = useState([]);
   const [showOlcum, setShowOlcum] = useState(false);
+  const [showOdeme, setShowOdeme] = useState(false);
+  const [odemeler, setOdemeler] = useState([]);
   const [showYenile, setShowYenile] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -616,6 +786,9 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
     });
     api('getOlcumler', { ogrenci_id: ogrenci.id }).then(data => {
       setOlcumler(Array.isArray(data) ? data : []);
+    });
+    api('getOdemeler', { ogrenci_id: ogrenci.id }).then(data => {
+      setOdemeler(Array.isArray(data) ? data.reverse() : []);
     });
   }, [ogrenci.id]);
 
@@ -739,6 +912,25 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           ))}
         </div>
 
+        {/* Ödemeler */}
+        <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:20, marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase' }}>Ödemeler</p>
+            <button onClick={() => setShowOdeme(true)} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.2)', borderRadius:20, padding:'4px 12px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:12 }}>+ Ödeme Ekle</button>
+          </div>
+          {odemeler.length === 0 ? (
+            <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'12px 0' }}>Henüz ödeme kaydı yok</p>
+          ) : odemeler.map(o => (
+            <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+              <div>
+                <p style={{ fontSize:13, color:'var(--cream)', marginBottom:2 }}>{o.tarih}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans paketi{o.notlar ? ` · ${o.notlar}` : ''}</p>
+              </div>
+              <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--green)', fontWeight:500 }}>{Number(o.tutar).toLocaleString('tr-TR')} ₺</span>
+            </div>
+          ))}
+        </div>
+
         {/* Ölçümler */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:20, marginBottom:16 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -771,6 +963,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
 
       {showYenile && <Modal title="Paket Yenile" onClose={() => setShowYenile(false)}><PaketYenile ogrenci={ogrenci} mevcutOgrenciler={ogrenciler} onSave={handleYenile} onClose={() => setShowYenile(false)} /></Modal>}
       {showOlcum && <Modal title="Ölçüm Ekle" onClose={() => setShowOlcum(false)}><OlcumForm ogrenciId={ogrenci.id} onSave={() => { setShowOlcum(false); refreshOlcumler(); }} onClose={() => setShowOlcum(false)} /></Modal>}
+      {showOdeme && <Modal title="Ödeme Ekle" onClose={() => setShowOdeme(false)}><OdemeForm ogrenci={ogrenci} ayarlar={ayarlar || {fiyat_8:3000,fiyat_12:4500}} onSave={() => { setShowOdeme(false); api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d.reverse():[])); }} onClose={() => setShowOdeme(false)} /></Modal>}
       {showEdit && <Modal title="Öğrenciyi Düzenle" onClose={() => setShowEdit(false)}><OgrenciForm initial={ogrenci} onSave={handleEdit} onClose={() => setShowEdit(false)} mevcutOgrenciler={ogrenciler} /></Modal>}
       {showDelete && (
         <Modal title="Öğrenciyi Sil" onClose={() => setShowDelete(false)}>
@@ -1055,6 +1248,7 @@ const App = () => {
   const [ogrenciler, setOgrenciler] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [ayarlar, setAyarlar] = useState({ fiyat_8: 3000, fiyat_12: 4500 });
 
   const loadOgrenciler = useCallback(async () => {
     setLoading(true);
@@ -1063,7 +1257,10 @@ const App = () => {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadOgrenciler(); }, []);
+  useEffect(() => {
+    loadOgrenciler();
+    api('getAyarlar').then(d => { if (d && !d.error) setAyarlar(d); });
+  }, []);
 
   const showToast = (msg, type = 'info') => setToast({ msg, type });
 
@@ -1072,6 +1269,7 @@ const App = () => {
     { id:'ogrenciler', label:'Öğrenciler', icon:'users' },
     { id:'program', label:'Program', icon:'calendar' },
     { id:'yoklama', label:'Yoklama', icon:'check' },
+    { id:'ciro', label:'Ciro', icon:'chart' },
   ];
 
   return (
@@ -1081,9 +1279,10 @@ const App = () => {
       {/* Content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} />}
-        {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} />}
+        {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} ayarlar={ayarlar} />}
         {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} />}
         {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} reload={loadOgrenciler} />}
+        {tab === 'ciro' && <Ciro ogrenciler={ogrenciler} ayarlar={ayarlar} showToast={showToast} />}
       </div>
 
       {/* Bottom Nav */}
