@@ -835,6 +835,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       gun1: form.gun1, saat1: form.saat1,
       gun2: form.gun2, saat2: form.saat2,
       gun3: form.gun3 || '', saat3: form.saat3 || '',
+      _yenileme: true,
     });
     if (r.success) { showToast('Paket yenilendi!', 'success'); setShowYenile(false); refreshOgrenci(); reload(); setTimeout(() => setShowOlcum(true), 500); }
     else showToast(r.error || 'Hata', 'error');
@@ -934,7 +935,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:20, marginBottom:16 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
             <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase' }}>Ödemeler</p>
-            <button onClick={() => setShowOdeme(true)} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.2)', borderRadius:20, padding:'4px 12px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:12 }}>+ Ödeme Ekle</button>
+            <button onClick={() => setShowOdeme(true)} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.2)', borderRadius:20, padding:'4px 12px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:12 }}>+ Manuel Ekle</button>
           </div>
           {odemeler.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'12px 0' }}>Henüz ödeme kaydı yok</p>
