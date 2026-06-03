@@ -484,7 +484,7 @@ const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
   const bugun = new Date().toISOString().split('T')[0];
   const fiyat = ogrenci.paket_tipi === '8' ? (ayarlar.fiyat_8 || 3000) : (ayarlar.fiyat_12 || 4500);
   const [form, setForm] = React.useState({
-    tarih: bugun, tutar: String(fiyat), notlar: ''
+    tarih: bugun, tutar: String(fiyat), notlar: '', durum: 'odendi'
   });
   const [saving, setSaving] = React.useState(false);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
@@ -498,7 +498,8 @@ const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
       tarih: tarihFormatted,
       tutar: Number(form.tutar),
       paket_tipi: ogrenci.paket_tipi,
-      notlar: form.notlar
+      notlar: form.notlar,
+      durum: form.durum
     });
     if (r.success) onSave();
     else alert(r.error || 'Hata');
@@ -513,6 +514,14 @@ const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
       </div>
       <Input label="Ödeme Tarihi" type="date" value={form.tarih} onChange={e => set('tarih', e.target.value)} />
       <Input label="Tutar (₺)" value={form.tutar} onChange={e => set('tutar', e.target.value)} inputMode="numeric" />
+      <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Ödeme Durumu</label>
+        <div style={{ display:'flex', gap:10 }}>
+          {[['odendi','✅ Ödendi'],['bekliyor','⏳ Bekliyor']].map(([v,l]) => (
+            <button key={v} onClick={() => set('durum', v)} style={{ flex:1, padding:'10px', borderRadius:10, border:`1px solid ${form.durum===v?'var(--gold)':'var(--border)'}`, background:form.durum===v?'rgba(139,58,31,0.1)':'var(--bg3)', color:form.durum===v?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer' }}>{l}</button>
+          ))}
+        </div>
+      </div>
       <div style={{ marginBottom:16 }}>
         <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>Notlar</label>
         <textarea value={form.notlar} onChange={e => set('notlar', e.target.value)} rows={2}
@@ -580,8 +589,8 @@ const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
           {/* Özet kartlar */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
             {[
-              { l:'Bu Ay', v:`${ozet.buAyCiro.toLocaleString('tr-TR')} ₺`, c:'var(--green)' },
-              { l:'Toplam', v:`${ozet.toplamCiro.toLocaleString('tr-TR')} ₺`, c:'var(--gold)' },
+              { l:'Bu Ay Tahsilat', v:`${ozet.buAyCiro.toLocaleString('tr-TR')} ₺`, c:'var(--green)' },
+              { l:'Toplam Tahsilat', v:`${ozet.toplamCiro.toLocaleString('tr-TR')} ₺`, c:'var(--gold)' },
             ].map(s => (
               <div key={s.l} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:'16px' }}>
                 <p style={{ fontSize:11, color:'var(--text2)', letterSpacing:1, textTransform:'uppercase', marginBottom:6 }}>{s.l}</p>
@@ -610,13 +619,22 @@ const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
             {tumOdemeler.length === 0 ? (
               <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'20px 0' }}>Henüz ödeme kaydı yok</p>
             ) : tumOdemeler.map(o => (
-              <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                <div>
-                  <p style={{ fontSize:14, color:'var(--text)', fontWeight:500, marginBottom:2 }}>{o.ogrenci_ad}</p>
+              <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                    <p style={{ fontSize:14, color:'var(--text)', fontWeight:500 }}>{o.ogrenci_ad}</p>
+                    <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                      background: o.durum==='odendi' ? 'rgba(61,122,85,0.12)' : 'rgba(176,58,37,0.1)',
+                      color: o.durum==='odendi' ? 'var(--green)' : 'var(--red)' }}>
+                      {o.durum==='odendi' ? '✓ Ödendi' : '⏳ Bekliyor'}
+                    </span>
+                  </div>
                   <p style={{ fontSize:11, color:'var(--text2)' }}>{o.tarih} · {o.paket_tipi} seans{o.notlar ? ` · ${o.notlar}` : ''}</p>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--green)', fontWeight:500 }}>{Number(o.tutar).toLocaleString('tr-TR')} ₺</span>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color: o.durum==='odendi' ? 'var(--green)' : 'var(--text2)', fontWeight:500 }}>
+                    {Number(o.tutar).toLocaleString('tr-TR')} ₺
+                  </span>
                   <button onClick={() => handleDeleteOdeme(o.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4 }}>
                     <Icon name="trash" size={14} />
                   </button>
@@ -920,13 +938,33 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           </div>
           {odemeler.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'12px 0' }}>Henüz ödeme kaydı yok</p>
-          ) : odemeler.map(o => (
-            <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-              <div>
-                <p style={{ fontSize:13, color:'var(--cream)', marginBottom:2 }}>{o.tarih}</p>
-                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans paketi{o.notlar ? ` · ${o.notlar}` : ''}</p>
+          ) : odemeler.map((o, i) => (
+            <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <span style={{ fontSize:11, fontWeight:600, color:'var(--gold)' }}>{i+1}. Paket</span>
+                  <span style={{ fontSize:11, color:'var(--text2)' }}>({o.paket_tipi} seans)</span>
+                  <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                    background: o.durum==='odendi' ? 'rgba(61,122,85,0.12)' : 'rgba(176,58,37,0.1)',
+                    color: o.durum==='odendi' ? 'var(--green)' : 'var(--red)' }}>
+                    {o.durum==='odendi' ? '✓ Ödendi' : '⏳ Bekliyor'}
+                  </span>
+                </div>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.tarih}{o.notlar ? ` · ${o.notlar}` : ''}</p>
               </div>
-              <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--green)', fontWeight:500 }}>{Number(o.tutar).toLocaleString('tr-TR')} ₺</span>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <span style={{ fontFamily:'Cormorant Garamond', fontSize:18, color: o.durum==='odendi' ? 'var(--green)' : 'var(--text2)', fontWeight:500 }}>
+                  {Number(o.tutar).toLocaleString('tr-TR')} ₺
+                </span>
+                {o.durum === 'bekliyor' && (
+                  <button onClick={async () => {
+                    const r = await api('updateOdemeDurum', {}, { id: o.id, durum: 'odendi', odeme_tarihi: new Date().toLocaleDateString('tr-TR') });
+                    if (r.success) { api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d.reverse():[])); }
+                  }} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.3)', borderRadius:8, padding:'4px 10px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:11 }}>
+                    Ödendi
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
