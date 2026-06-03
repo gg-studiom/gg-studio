@@ -471,11 +471,119 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast }) => {
   );
 };
 
+
+// ── ÖLÇÜM FORMU ───────────────────────────────────────────────
+const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
+  const bugun = new Date().toISOString().split('T')[0];
+  const [form, setForm] = React.useState({
+    tarih: bugun, boy:'', kilo:'', gogus:'', bel:'',
+    basen:'', baldir:'', pazi:'', yag:'', notlar:''
+  });
+  const [saving, setSaving] = React.useState(false);
+  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+
+  const handleSave = async () => {
+    setSaving(true);
+    const tarihFormatted = form.tarih
+      ? new Date(form.tarih).toLocaleDateString('tr-TR')
+      : new Date().toLocaleDateString('tr-TR');
+    const r = await api('addOlcum', {}, { ogrenci_id: ogrenciId, ...form, tarih: tarihFormatted });
+    if (r.success) { onSave(); }
+    else alert(r.error || 'Hata');
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <Input label="Tarih" type="date" value={form.tarih} onChange={e => set('tarih', e.target.value)} />
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
+        {[['boy','Boy (cm)'],['kilo','Kilo (kg)'],['gogus','Göğüs (cm)'],['bel','Bel (cm)'],
+          ['basen','Basen (cm)'],['baldir','Baldır (cm)'],['pazi','Pazı (cm)'],['yag','Yağ (%)']
+        ].map(([k,l]) => (
+          <div key={k}>
+            <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>{l}</label>
+            <input value={form[k]} onChange={e => set(k, e.target.value)} inputMode="decimal"
+              style={{ width:'100%', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 12px', color:'var(--text)', fontSize:15, fontFamily:'Jost' }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>Notlar</label>
+        <textarea value={form.notlar} onChange={e => set('notlar', e.target.value)} rows={3}
+          style={{ width:'100%', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'12px 14px', color:'var(--text)', fontSize:14, fontFamily:'Jost', resize:'none' }} />
+      </div>
+      <div style={{ display:'flex', gap:10 }}>
+        <Btn variant="secondary" onClick={onClose} style={{ flex:1 }}>İptal</Btn>
+        <Btn onClick={handleSave} disabled={saving} style={{ flex:2 }}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</Btn>
+      </div>
+    </div>
+  );
+};
+
+// ── ÖLÇÜM KARTI ──────────────────────────────────────────────
+const OlcumKarti = ({ olcum, index, onceki, onDelete }) => {
+  const alanlar = [
+    ['boy','Boy','cm'],['kilo','Kilo','kg'],['gogus','Göğüs','cm'],
+    ['bel','Bel','cm'],['basen','Basen','cm'],['baldir','Baldır','cm'],
+    ['pazi','Pazı','cm'],['yag','Yağ','%']
+  ];
+
+  const fark = (k) => {
+    if (!onceki || !olcum[k] || !onceki[k]) return null;
+    const f = parseFloat(olcum[k]) - parseFloat(onceki[k]);
+    if (isNaN(f) || f === 0) return null;
+    return f;
+  };
+
+  return (
+    <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, marginBottom:12, overflow:'hidden' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid var(--border)', background:'rgba(139,58,31,0.05)' }}>
+        <div>
+          <p style={{ fontFamily:'Cormorant Garamond', fontSize:16, fontWeight:500, color:'var(--gold)' }}>{index + 1}. Ölçüm</p>
+          <p style={{ fontSize:11, color:'var(--text2)', marginTop:2 }}>{olcum.tarih}</p>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:11, background:'rgba(139,58,31,0.1)', color:'var(--gold)', padding:'3px 10px', borderRadius:20 }}>
+            {index === 0 ? 'İlk Kayıt' : 'Paket Yenileme'}
+          </span>
+          <button onClick={() => onDelete(olcum.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', padding:4 }}>
+            <Icon name="trash" size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+        {alanlar.map(([k, l, u], i) => {
+          const f = fark(k);
+          const isLast2 = i >= alanlar.length - 2;
+          return olcum[k] ? (
+            <div key={k} style={{ padding:'10px 16px', borderBottom: isLast2 ? 'none' : '1px solid var(--border)', borderRight: i%2===0 ? '1px solid var(--border)' : 'none' }}>
+              <p style={{ fontSize:10, letterSpacing:1, color:'var(--text3)', textTransform:'uppercase', marginBottom:3 }}>{l}</p>
+              <p style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>
+                {u === '%' ? '%' : ''}{olcum[k]} <span style={{ fontSize:11, color:'var(--text2)' }}>{u !== '%' ? u : ''}</span>
+                {f !== null && <span style={{ fontSize:11, marginLeft:4, color: f < 0 ? 'var(--green)' : 'var(--red)', fontWeight:600 }}>
+                  {f < 0 ? '▼' : '▲'}{Math.abs(f).toFixed(1)}
+                </span>}
+              </p>
+            </div>
+          ) : null;
+        })}
+      </div>
+      {olcum.notlar && (
+        <div style={{ padding:'10px 16px', borderTop:'1px solid var(--border)', fontSize:13, color:'var(--text2)', fontStyle:'italic' }}>
+          💬 {olcum.notlar}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── ÖĞRENCİ DETAY ─────────────────────────────────────────────
 const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, reload }) => {
   const [ogrenci, setOgrenci] = useState(initialOgrenci);
   const [yoklama, setYoklama] = useState([]);
   const [loadingY, setLoadingY] = useState(true);
+  const [olcumler, setOlcumler] = useState([]);
+  const [showOlcum, setShowOlcum] = useState(false);
   const [showYenile, setShowYenile] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -485,7 +593,20 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       setYoklama(Array.isArray(data) ? data.reverse() : []);
       setLoadingY(false);
     });
+    api('getOlcumler', { ogrenci_id: ogrenci.id }).then(data => {
+      setOlcumler(Array.isArray(data) ? data : []);
+    });
   }, [ogrenci.id]);
+
+  const refreshOlcumler = async () => {
+    const data = await api('getOlcumler', { ogrenci_id: ogrenci.id });
+    setOlcumler(Array.isArray(data) ? data : []);
+  };
+
+  const handleDeleteOlcum = async (id) => {
+    const r = await api('deleteOlcum', { id });
+    if (r.success) refreshOlcumler();
+  };
 
   const refreshOgrenci = async () => {
     const data = await api('getOgrenci', { id: ogrenci.id });
@@ -503,7 +624,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       gun2: form.gun2, saat2: form.saat2,
       gun3: form.gun3 || '', saat3: form.saat3 || '',
     });
-    if (r.success) { showToast('Paket yenilendi!', 'success'); setShowYenile(false); refreshOgrenci(); reload(); }
+    if (r.success) { showToast('Paket yenilendi!', 'success'); setShowYenile(false); refreshOgrenci(); reload(); setTimeout(() => setShowOlcum(true), 500); }
     else showToast(r.error || 'Hata', 'error');
   };
 
@@ -545,9 +666,14 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
               <p style={{ fontFamily:'Cormorant Garamond', fontSize:44, fontWeight:500, color: ogrenci.kalan_ders <= 1 ? 'var(--red)' : 'var(--gold)', lineHeight:1 }}>{ogrenci.kalan_ders}</p>
               <p style={{ fontSize:12, color:'var(--text2)', marginTop:4 }}>/ {ogrenci.toplam_ders} seans</p>
             </div>
-            <button onClick={() => setShowYenile(true)} style={{ background:'rgba(139,58,31,0.1)', border:'1px solid rgba(139,58,31,0.25)', borderRadius:12, padding:'10px 14px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
-              <Icon name="refresh" size={14} color="var(--gold)" /> Yenile
-            </button>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => setShowOlcum(true)} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.3)', borderRadius:12, padding:'10px 14px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:13 }}>
+                📏 Ölçüm
+              </button>
+              <button onClick={() => setShowYenile(true)} style={{ background:'rgba(139,58,31,0.1)', border:'1px solid rgba(139,58,31,0.25)', borderRadius:12, padding:'10px 14px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+                <Icon name="refresh" size={14} color="var(--gold)" /> Yenile
+              </button>
+            </div>
           </div>
           {/* Progress bar */}
           <div style={{ background:'var(--bg3)', borderRadius:4, height:6, overflow:'hidden' }}>
@@ -592,6 +718,19 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           ))}
         </div>
 
+        {/* Ölçümler */}
+        <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:20, marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase' }}>Ölçümler</p>
+            <button onClick={() => setShowOlcum(true)} style={{ background:'rgba(139,58,31,0.1)', border:'1px solid rgba(139,58,31,0.2)', borderRadius:20, padding:'4px 12px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:12 }}>+ Ekle</button>
+          </div>
+          {olcumler.length === 0 ? (
+            <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'12px 0' }}>Henüz ölçüm girilmemiş</p>
+          ) : olcumler.map((o, i) => (
+            <OlcumKarti key={o.id} olcum={o} index={i} onceki={i > 0 ? olcumler[i-1] : null} onDelete={handleDeleteOlcum} />
+          ))}
+        </div>
+
         {/* Yoklama geçmişi */}
         <div style={{ background:'var(--card)', border:`1px solid var(--border)`, borderRadius:16, padding:20 }}>
           <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:14 }}>Yoklama Geçmişi</p>
@@ -612,6 +751,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       </div>
 
       {showYenile && <Modal title="Paket Yenile" onClose={() => setShowYenile(false)}><PaketYenile ogrenci={ogrenci} mevcutOgrenciler={ogrenciler} onSave={handleYenile} onClose={() => setShowYenile(false)} /></Modal>}
+      {showOlcum && <Modal title="Ölçüm Ekle" onClose={() => setShowOlcum(false)}><OlcumForm ogrenciId={ogrenci.id} onSave={() => { setShowOlcum(false); refreshOlcumler(); }} onClose={() => setShowOlcum(false)} /></Modal>}
       {showEdit && <Modal title="Öğrenciyi Düzenle" onClose={() => setShowEdit(false)}><OgrenciForm initial={ogrenci} onSave={handleEdit} onClose={() => setShowEdit(false)} mevcutOgrenciler={ogrenciler} /></Modal>}
       {showDelete && (
         <Modal title="Öğrenciyi Sil" onClose={() => setShowDelete(false)}>
