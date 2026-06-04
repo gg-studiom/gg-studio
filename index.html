@@ -1210,7 +1210,13 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     const bugunAdi = gunler[new Date().getDay()];
     return (bugunAdi === 'Pazar' || bugunAdi === 'Cumartesi') ? 'Pazartesi' : bugunAdi;
   };
+  const gunToTR = (d) => {
+    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    return gunler[d.getDay()];
+  };
   const [gun, setGun] = useState(getTodayGun);
+  const [secilenTarih, setSecilenTarih] = useState(new Date().toISOString().split('T')[0]);
+  const [showTakvim, setShowTakvim] = useState(false);
   const [saat, setSaat] = useState('');
   const [kayitlar, setKayitlar] = useState({});
   const [mevcutYoklama, setMevcutYoklama] = useState([]);
@@ -1250,7 +1256,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   const yukleYoklama = () => {
     if (!gun || !saat) return;
     setLoadingYoklama(true);
-    api('getYoklamaByGunSaat', { gun, saat }).then(data => {
+    api('getYoklamaByGunSaatTarih', { gun, saat, tarih: secilenTarih ? new Date(secilenTarih).toLocaleDateString('tr-TR') : new Date().toLocaleDateString('tr-TR') }).then(data => {
       if (Array.isArray(data)) {
         const map = {};
         data.forEach(y => { map[y.ogrenci_id] = y; });
@@ -1269,7 +1275,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
 
   const handleYoklama = async (ogrenci, durum) => {
     setSaving(s => ({ ...s, [ogrenci.id]: true }));
-    const tarih = new Date().toLocaleDateString('tr-TR');
+    const tarih = secilenTarih ? new Date(secilenTarih).toLocaleDateString('tr-TR') : new Date().toLocaleDateString('tr-TR');
     const mevcut = mevcutYoklama[ogrenci.id];
 
     let r;
@@ -1317,16 +1323,51 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
         <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1, marginBottom:16 }}>Yoklama</h2>
 
         <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+            <label style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase' }}>Gün Seç</label>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {secilenTarih !== new Date().toISOString().split('T')[0] && (
+                <span style={{ fontSize:11, color:'var(--gold)', background:'rgba(139,58,31,0.1)', padding:'3px 10px', borderRadius:20 }}>
+                  {new Date(secilenTarih).toLocaleDateString('tr-TR', { day:'numeric', month:'long' })}
+                </span>
+              )}
+              <div style={{ position:'relative' }}>
+                <button onClick={() => setShowTakvim(!showTakvim)}
+                  style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'6px 10px', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:'var(--text2)' }}>
+                  <Icon name="calendar" size={14} />
+                  <span style={{ fontSize:11, fontFamily:'Jost' }}>Tarih</span>
+                </button>
+                {showTakvim && (
+                  <div style={{ position:'absolute', right:0, top:36, zIndex:100, background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:8, boxShadow:'0 4px 20px rgba(0,0,0,0.15)' }}>
+                    <input type="date" value={secilenTarih}
+                      onChange={e => {
+                        const d = new Date(e.target.value);
+                        const gunler3 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+                        const gunAdi = gunler3[d.getDay()];
+                        const yeniGun = (gunAdi === 'Pazar' || gunAdi === 'Cumartesi') ? 'Pazartesi' : gunAdi;
+                        setSecilenTarih(e.target.value);
+                        setGun(yeniGun);
+                        setSaat('');
+                        setKayitlar({});
+                        setMevcutYoklama({});
+                        setShowTakvim(false);
+                      }}
+                      style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'8px', color:'var(--text)', fontFamily:'Jost', fontSize:14 }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
             {GUNLER.map(g => {
               const gunler2 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
               const bugunAdi2 = gunler2[new Date().getDay()];
               const bugunGun = (bugunAdi2 === 'Pazar' || bugunAdi2 === 'Cumartesi') ? 'Pazartesi' : bugunAdi2;
-              const isToday = g === bugunGun;
+              const isToday = g === bugunGun && secilenTarih === new Date().toISOString().split('T')[0];
               const isSelected = g === gun;
               return (
-                <button key={g} onClick={() => { setGun(g); setSaat(''); setKayitlar({}); }}
+                <button key={g} onClick={() => { setGun(g); setSaat(''); setKayitlar({}); setMevcutYoklama({}); setSecilenTarih(new Date().toISOString().split('T')[0]); }}
                   style={{ padding:'8px 14px', borderRadius:20, flexShrink:0, whiteSpace:'nowrap', cursor:'pointer', fontFamily:'Jost', fontSize:13,
                     border: isSelected ? '1px solid var(--gold)' : isToday ? '1px solid var(--gold2)' : '1px solid var(--border)',
                     background: isSelected ? 'rgba(139,58,31,0.15)' : 'var(--card)',
@@ -1420,12 +1461,15 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [ayarlar, setAyarlar] = useState({ fiyat_8: 3000, fiyat_12: 4500 });
   const [yoklamaKey, setYoklamaKey] = useState(0);
+  const ilkYukleme = React.useRef(true);
 
   const loadOgrenciler = useCallback(async () => {
-    setLoading(true);
+    // Sadece ilk yüklemede loading göster
+    if (ilkYukleme.current) setLoading(true);
     const data = await api('getOgrenciler');
     setOgrenciler(Array.isArray(data) ? data : []);
     setLoading(false);
+    ilkYukleme.current = false;
   }, []);
 
   useEffect(() => {
