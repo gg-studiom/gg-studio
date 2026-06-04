@@ -1323,43 +1323,45 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
         <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1, marginBottom:16 }}>Yoklama</h2>
 
         <div style={{ marginBottom:12 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-            <label style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase' }}>Gün Seç</label>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              {secilenTarih !== new Date().toISOString().split('T')[0] && (
-                <span style={{ fontSize:11, color:'var(--gold)', background:'rgba(139,58,31,0.1)', padding:'3px 10px', borderRadius:20 }}>
-                  {new Date(secilenTarih).toLocaleDateString('tr-TR', { day:'numeric', month:'long' })}
-                </span>
+          <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
+          <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4, alignItems:'center' }}>
+            {/* Tarih butonu */}
+            <div style={{ position:'relative', flexShrink:0 }}>
+              <button onClick={() => setShowTakvim(!showTakvim)}
+                style={{ padding:'8px 14px', borderRadius:20, cursor:'pointer', fontFamily:'Jost', fontSize:13, flexShrink:0, whiteSpace:'nowrap',
+                  border: secilenTarih !== new Date().toISOString().split('T')[0] ? '1px solid var(--gold)' : '1px solid var(--border)',
+                  background: secilenTarih !== new Date().toISOString().split('T')[0] ? 'rgba(139,58,31,0.15)' : 'var(--card)',
+                  color: secilenTarih !== new Date().toISOString().split('T')[0] ? 'var(--gold)' : 'var(--text2)',
+                  display:'flex', alignItems:'center', gap:5
+                }}>
+                <Icon name="calendar" size={13} color={secilenTarih !== new Date().toISOString().split('T')[0] ? 'var(--gold)' : 'var(--text2)'} />
+                {secilenTarih !== new Date().toISOString().split('T')[0]
+                  ? new Date(secilenTarih).toLocaleDateString('tr-TR', { day:'numeric', month:'short' })
+                  : 'Tarih'}
+              </button>
+              {showTakvim && (
+                <div style={{ position:'absolute', left:0, top:40, zIndex:100, background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:8, boxShadow:'0 4px 20px rgba(0,0,0,0.2)' }}>
+                  <input type="date" value={secilenTarih}
+                    onChange={e => {
+                      const d = new Date(e.target.value);
+                      const gunler3 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+                      const gunAdi = gunler3[d.getDay()];
+                      const yeniGun = (gunAdi === 'Pazar' || gunAdi === 'Cumartesi') ? 'Pazartesi' : gunAdi;
+                      setSecilenTarih(e.target.value);
+                      setGun(yeniGun);
+                      setSaat('');
+                      setKayitlar({});
+                      setMevcutYoklama({});
+                      setShowTakvim(false);
+                    }}
+                    style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'8px', color:'var(--text)', fontFamily:'Jost', fontSize:14 }}
+                  />
+                </div>
               )}
-              <div style={{ position:'relative' }}>
-                <button onClick={() => setShowTakvim(!showTakvim)}
-                  style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'6px 10px', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:'var(--text2)' }}>
-                  <Icon name="calendar" size={14} />
-                  <span style={{ fontSize:11, fontFamily:'Jost' }}>Tarih</span>
-                </button>
-                {showTakvim && (
-                  <div style={{ position:'absolute', right:0, top:36, zIndex:100, background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:8, boxShadow:'0 4px 20px rgba(0,0,0,0.15)' }}>
-                    <input type="date" value={secilenTarih}
-                      onChange={e => {
-                        const d = new Date(e.target.value);
-                        const gunler3 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-                        const gunAdi = gunler3[d.getDay()];
-                        const yeniGun = (gunAdi === 'Pazar' || gunAdi === 'Cumartesi') ? 'Pazartesi' : gunAdi;
-                        setSecilenTarih(e.target.value);
-                        setGun(yeniGun);
-                        setSaat('');
-                        setKayitlar({});
-                        setMevcutYoklama({});
-                        setShowTakvim(false);
-                      }}
-                      style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'8px', color:'var(--text)', fontFamily:'Jost', fontSize:14 }}
-                    />
-                  </div>
-                )}
-              </div>
             </div>
-          </div>
-          <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
+            {/* Ayraç */}
+            <div style={{ width:1, height:20, background:'var(--border)', flexShrink:0 }} />
+            {/* Günler */}
             {GUNLER.map(g => {
               const gunler2 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
               const bugunAdi2 = gunler2[new Date().getDay()];
