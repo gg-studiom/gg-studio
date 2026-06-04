@@ -987,15 +987,30 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           {loadingY ? <Loader /> : yoklama.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:13, textAlign:'center', padding:'20px 0' }}>Henüz yoklama kaydı yok</p>
           ) : (() => {
-            // Yoklamayı paketlere böl
             const paketBoyutu = Number(ogrenci.paket_tipi) || 8;
+            const sıralı = [...yoklama].reverse(); // eskiden yeniye
+            
+            // Telafi olmayanları sayarak paket sınırlarını bul
             const gruplar = [];
-            for (let i = 0; i < yoklama.length; i += paketBoyutu) {
-              gruplar.push(yoklama.slice(i, i + paketBoyutu));
-            }
+            let mevcutGrup = [];
+            let sayac = 0;
+            
+            sıralı.forEach(y => {
+              mevcutGrup.push(y);
+              if (y.durum !== 'telafi') {
+                sayac++;
+                if (sayac % paketBoyutu === 0) {
+                  gruplar.push([...mevcutGrup]);
+                  mevcutGrup = [];
+                }
+              }
+            });
+            
+            // Kalan tamamlanmamış paket
+            if (mevcutGrup.length > 0) gruplar.push(mevcutGrup);
+            
             return gruplar.map((grup, gi) => (
               <div key={gi}>
-                {/* Paket ayracı */}
                 <div style={{ display:'flex', alignItems:'center', gap:10, margin:'12px 0 8px' }}>
                   <div style={{ flex:1, height:'1px', background:'var(--border)' }} />
                   <span style={{ fontSize:11, color:'var(--gold)', fontWeight:500, letterSpacing:1, whiteSpace:'nowrap' }}>
@@ -1003,7 +1018,6 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
                   </span>
                   <div style={{ flex:1, height:'1px', background:'var(--border)' }} />
                 </div>
-                {/* O paketteki yoklamalar */}
                 {grup.map(y => (
                   <div key={y.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                     <div>
