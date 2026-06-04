@@ -1172,10 +1172,13 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     return (g1===g && s1===s) || (g2===g && s2===s) || (g3===g && s3===s);
   }).filter(o => o.ad_soyad?.toLowerCase().includes(search.toLowerCase()));
 
-  // Tab değişince state sıfırla ve yeniden yükle
+  // Tab değişince her şeyi sıfırla
   useEffect(() => {
+    setGun('');
+    setSaat('');
     setKayitlar({});
     setMevcutYoklama({});
+    setSearch('');
   }, [refreshKey]);
 
   // Mevcut yoklamayı yükle
