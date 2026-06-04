@@ -806,7 +806,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       setOlcumler(Array.isArray(data) ? data : []);
     });
     api('getOdemeler', { ogrenci_id: ogrenci.id }).then(data => {
-      setOdemeler(Array.isArray(data) ? data.reverse() : []);
+      setOdemeler(Array.isArray(data) ? data : []);
     });
   }, [ogrenci.id]);
 
@@ -960,7 +960,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
                 {o.durum === 'bekliyor' && (
                   <button onClick={async () => {
                     const r = await api('updateOdemeDurum', {}, { id: o.id, durum: 'odendi', odeme_tarihi: new Date().toLocaleDateString('tr-TR') });
-                    if (r.success) { api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d.reverse():[])); }
+                    if (r.success) { api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d:[])); }
                   }} style={{ background:'rgba(61,122,85,0.1)', border:'1px solid rgba(61,122,85,0.3)', borderRadius:8, padding:'4px 10px', cursor:'pointer', color:'var(--green)', fontFamily:'Jost', fontSize:11 }}>
                     Ödendi
                   </button>
@@ -1037,7 +1037,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
 
       {showYenile && <Modal title="Paket Yenile" onClose={() => setShowYenile(false)}><PaketYenile ogrenci={ogrenci} mevcutOgrenciler={ogrenciler} onSave={handleYenile} onClose={() => setShowYenile(false)} /></Modal>}
       {showOlcum && <Modal title="Ölçüm Ekle" onClose={() => setShowOlcum(false)}><OlcumForm ogrenciId={ogrenci.id} onSave={() => { setShowOlcum(false); refreshOlcumler(); }} onClose={() => setShowOlcum(false)} /></Modal>}
-      {showOdeme && <Modal title="Ödeme Ekle" onClose={() => setShowOdeme(false)}><OdemeForm ogrenci={ogrenci} ayarlar={ayarlar || {fiyat_8:3000,fiyat_12:4500}} onSave={() => { setShowOdeme(false); api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d.reverse():[])); }} onClose={() => setShowOdeme(false)} /></Modal>}
+      {showOdeme && <Modal title="Ödeme Ekle" onClose={() => setShowOdeme(false)}><OdemeForm ogrenci={ogrenci} ayarlar={ayarlar || {fiyat_8:3000,fiyat_12:4500}} onSave={() => { setShowOdeme(false); api('getOdemeler',{ogrenci_id:ogrenci.id}).then(d=>setOdemeler(Array.isArray(d)?d:[])); }} onClose={() => setShowOdeme(false)} /></Modal>}
       {showEdit && <Modal title="Öğrenciyi Düzenle" onClose={() => setShowEdit(false)}><OgrenciForm initial={ogrenci} onSave={handleEdit} onClose={() => setShowEdit(false)} mevcutOgrenciler={ogrenciler} /></Modal>}
       {showDelete && (
         <Modal title="Öğrenciyi Sil" onClose={() => setShowDelete(false)}>
