@@ -1154,6 +1154,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   const [mevcutYoklama, setMevcutYoklama] = useState([]);
   const [saving, setSaving] = useState({});
   const [search, setSearch] = useState('');
+  const [loadingYoklama, setLoadingYoklama] = useState(false);
 
   const bugunGun = () => {
     const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
@@ -1180,6 +1181,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   // Mevcut yoklamayı yükle
   const yukleYoklama = () => {
     if (!gun || !saat) return;
+    setLoadingYoklama(true);
     api('getYoklamaByGunSaat', { gun, saat }).then(data => {
       if (Array.isArray(data)) {
         const map = {};
@@ -1189,6 +1191,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
         data.forEach(y => { k[y.ogrenci_id] = y.durum; });
         setKayitlar(k);
       }
+      setLoadingYoklama(false);
     });
   };
 
@@ -1306,7 +1309,9 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
                     {mevcut && <span style={{ fontSize:11, padding:'3px 8px', borderRadius:10, background:'rgba(139,58,31,0.1)', color:'var(--gold)' }}>✓ Kaydedildi</span>}
                   </div>
                   <div style={{ display:'flex', gap:6 }}>
-                    {saving[o.id] ? <p style={{ color:'var(--text2)', fontSize:12, padding:'8px 0' }}>Kaydediliyor...</p> : (
+                    {saving[o.id] ? <p style={{ color:'var(--text2)', fontSize:12, padding:'8px 0' }}>Kaydediliyor...</p> : loadingYoklama ? (
+                      <p style={{ color:'var(--text3)', fontSize:12, padding:'8px 0' }}>Yükleniyor...</p>
+                    ) : (
                       <>
                         <button style={btnStyle(mevcut==='katildi','katildi')} onClick={() => handleYoklama(o, 'katildi')}>✓ Katıldı</button>
                         <button style={btnStyle(mevcut==='katilmadi','katilmadi')} onClick={() => handleYoklama(o, 'katilmadi')}>✗ Gelmedi</button>
