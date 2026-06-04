@@ -1205,7 +1205,12 @@ const DersProgrami = ({ ogrenciler, loading }) => {
 const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) => {
   const [ogrenciler, setOgrenciler] = React.useState(ogrencilerProp);
   React.useEffect(() => { setOgrenciler(ogrencilerProp); }, [ogrencilerProp]);
-  const [gun, setGun] = useState('');
+  const getTodayGun = () => {
+    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    const bugunAdi = gunler[new Date().getDay()];
+    return (bugunAdi === 'Pazar' || bugunAdi === 'Cumartesi') ? 'Pazartesi' : bugunAdi;
+  };
+  const [gun, setGun] = useState(getTodayGun);
   const [saat, setSaat] = useState('');
   const [kayitlar, setKayitlar] = useState({});
   const [mevcutYoklama, setMevcutYoklama] = useState([]);
