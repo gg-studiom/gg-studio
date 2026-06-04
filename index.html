@@ -351,10 +351,39 @@ const PaketYenile = ({ ogrenci, mevcutOgrenciler, onSave, onClose }) => {
 // ══════════════════════════════════════════════════════════════
 
 // ── ANA SAYFA ──────────────────────────────────────────────────
-const AnaSayfa = ({ ogrenciler, loading }) => {
+const AnaSayfa = ({ ogrenciler, loading, ayarlar }) => {
   const bugun = new Date().toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const bugunGunAdi = new Date().toLocaleDateString('tr-TR', { weekday:'long' });
+  // Capitalize first letter
+  const bugunGun = bugunGunAdi.charAt(0).toUpperCase() + bugunGunAdi.slice(1);
   const sonDers = ogrenciler.filter(o => o.kalan_ders === 1);
   const aktif = ogrenciler.filter(o => o.kalan_ders > 0);
+
+  // Bugünkü dersler
+  const bugunDersler = React.useMemo(() => {
+    const saatler = {};
+    ogrenciler.forEach(o => {
+      if (o.kalan_ders <= 0) return;
+      [[o.gun1,o.saat1],[o.gun2,o.saat2],[o.gun3,o.saat3]].forEach(([g,s]) => {
+        if (!g || !s) return;
+        if (g.trim() === bugunGun.trim()) {
+          if (!saatler[s]) saatler[s] = [];
+          saatler[s].push(o.ad_soyad);
+        }
+      });
+    });
+    return Object.entries(saatler).sort((a,b) => a[0].localeCompare(b[0]));
+  }, [ogrenciler, bugunGun]);
+
+  // Bekleyen ödemeler - ayrı state ile yüklenir
+  const [bekleyenOdemeler, setBekleyenOdemeler] = React.useState([]);
+  React.useEffect(() => {
+    api('getOdemeler', {}).then(data => {
+      if (Array.isArray(data)) {
+        setBekleyenOdemeler(data.filter(o => o.durum === 'bekliyor'));
+      }
+    });
+  }, [ogrenciler]);
 
   return (
     <div style={{ flex:1, overflowY:'auto', padding:'0 0 100px' }}>
@@ -392,6 +421,34 @@ const AnaSayfa = ({ ogrenciler, loading }) => {
             <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid rgba(192,80,58,0.1)' }}>
               <span style={{ color:'var(--cream)', fontSize:15 }}>{o.ad_soyad}</span>
               <span style={{ fontSize:11, color:'var(--red)', background:'rgba(176,58,37,0.1)', padding:'3px 10px', borderRadius:20 }}>1 ders kaldı</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bugünkü Dersler */}
+      {!loading && bugunDersler.length > 0 && (
+        <div style={{ margin:'0 20px 20px', background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:16 }}>
+          <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>📅 Bugünkü Dersler</p>
+          {bugunDersler.map(([saat, isimler]) => (
+            <div key={saat} style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
+              <span style={{ fontSize:14, fontWeight:600, color:'var(--gold2)', minWidth:50 }}>{saat}</span>
+              <span style={{ fontSize:13, color:'var(--text)', flex:1, textAlign:'right' }}>{isimler.join(', ')}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bekleyen Ödemeler */}
+      {!loading && bekleyenOdemeler.length > 0 && (
+        <div style={{ margin:'0 20px 20px', background:'rgba(176,58,37,0.04)', border:'1px solid rgba(176,58,37,0.15)', borderRadius:14, padding:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+            <span style={{ fontSize:11, letterSpacing:2, color:'var(--red)', textTransform:'uppercase', fontWeight:500 }}>💰 Bekleyen Ödemeler</span>
+          </div>
+          {bekleyenOdemeler.map(o => (
+            <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid rgba(176,58,37,0.1)' }}>
+              <span style={{ fontSize:14, color:'var(--text)' }}>{o.ogrenci_ad}</span>
+              <span style={{ fontSize:13, color:'var(--red)', fontWeight:500 }}>{Number(o.tutar).toLocaleString('tr-TR')} ₺</span>
             </div>
           ))}
         </div>
@@ -1371,7 +1428,7 @@ const App = () => {
 
       {/* Content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} />}
+        {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} ayarlar={ayarlar} />}
         {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} ayarlar={ayarlar} />}
         {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} />}
         {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} reload={loadOgrenciler} refreshKey={yoklamaKey} />}
