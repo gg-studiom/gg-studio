@@ -1229,13 +1229,22 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     return (g1===g && s1===s) || (g2===g && s2===s) || (g3===g && s3===s);
   }).filter(o => o.ad_soyad?.toLowerCase().includes(search.toLowerCase()));
 
-  // Tab değişince her şeyi sıfırla
+  // Bugünün gününü hesapla
+  const getBugunGun = () => {
+    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    const bugunAdi = gunler[new Date().getDay()];
+    // Hafta sonu ise Pazartesi'yi seç
+    if (bugunAdi === 'Pazar' || bugunAdi === 'Cumartesi') return 'Pazartesi';
+    return bugunAdi;
+  };
+
+  // Tab değişince bugünün gününü otomatik seç
   useEffect(() => {
-    setGun('');
     setSaat('');
     setKayitlar({});
     setMevcutYoklama({});
     setSearch('');
+    setGun(getBugunGun());
   }, [refreshKey]);
 
   // Mevcut yoklamayı yükle
@@ -1311,11 +1320,22 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
         <div style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
           <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
-            {GUNLER.map(g => (
-              <button key={g} onClick={() => { setGun(g); setSaat(''); setKayitlar({}); }} style={{ padding:'8px 14px', borderRadius:20, border:`1px solid ${gun===g?'var(--gold)':'var(--border)'}`, background:gun===g?'rgba(200,149,108,0.15)':'var(--card)', color:gun===g?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>
-                {g}
-              </button>
-            ))}
+            {GUNLER.map(g => {
+              const bugunGun = getBugunGun();
+              const isToday = g === bugunGun;
+              const isSelected = g === gun;
+              return (
+                <button key={g} onClick={() => { setGun(g); setSaat(''); setKayitlar({}); }}
+                  style={{ padding:'8px 14px', borderRadius:20, flexShrink:0, whiteSpace:'nowrap', cursor:'pointer', fontFamily:'Jost', fontSize:13,
+                    border: isSelected ? '1px solid var(--gold)' : isToday ? '1px solid var(--gold2)' : '1px solid var(--border)',
+                    background: isSelected ? 'rgba(139,58,31,0.15)' : 'var(--card)',
+                    color: isSelected ? 'var(--gold)' : isToday ? 'var(--gold2)' : 'var(--text2)',
+                    fontWeight: isToday ? 600 : 400,
+                  }}>
+                  {g}{isToday ? ' •' : ''}
+                </button>
+              );
+            })}
           </div>
         </div>
 
