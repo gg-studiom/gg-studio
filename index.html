@@ -1229,22 +1229,16 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     return (g1===g && s1===s) || (g2===g && s2===s) || (g3===g && s3===s);
   }).filter(o => o.ad_soyad?.toLowerCase().includes(search.toLowerCase()));
 
-  // Bugünün gününü hesapla
-  const getBugunGun = () => {
-    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-    const bugunAdi = gunler[new Date().getDay()];
-    // Hafta sonu ise Pazartesi'yi seç
-    if (bugunAdi === 'Pazar' || bugunAdi === 'Cumartesi') return 'Pazartesi';
-    return bugunAdi;
-  };
-
   // Tab değişince bugünün gününü otomatik seç
   useEffect(() => {
+    const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    const bugunAdi = gunler[new Date().getDay()];
+    const bugun = (bugunAdi === 'Pazar' || bugunAdi === 'Cumartesi') ? 'Pazartesi' : bugunAdi;
     setSaat('');
     setKayitlar({});
     setMevcutYoklama({});
     setSearch('');
-    setGun(getBugunGun());
+    setGun(bugun);
   }, [refreshKey]);
 
   // Mevcut yoklamayı yükle
@@ -1321,7 +1315,9 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
           <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
           <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
             {GUNLER.map(g => {
-              const bugunGun = getBugunGun();
+              const gunler2 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+              const bugunAdi2 = gunler2[new Date().getDay()];
+              const bugunGun = (bugunAdi2 === 'Pazar' || bugunAdi2 === 'Cumartesi') ? 'Pazartesi' : bugunAdi2;
               const isToday = g === bugunGun;
               const isSelected = g === gun;
               return (
