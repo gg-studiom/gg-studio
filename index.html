@@ -1340,22 +1340,31 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
                   : 'Tarih'}
               </button>
               {showTakvim && (
-                <div style={{ position:'absolute', left:0, top:40, zIndex:100, background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:8, boxShadow:'0 4px 20px rgba(0,0,0,0.2)' }}>
-                  <input type="date" value={secilenTarih}
-                    onChange={e => {
-                      const d = new Date(e.target.value);
-                      const gunler3 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-                      const gunAdi = gunler3[d.getDay()];
-                      const yeniGun = (gunAdi === 'Pazar' || gunAdi === 'Cumartesi') ? 'Pazartesi' : gunAdi;
-                      setSecilenTarih(e.target.value);
-                      setGun(yeniGun);
-                      setSaat('');
-                      setKayitlar({});
-                      setMevcutYoklama({});
-                      setShowTakvim(false);
-                    }}
-                    style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'8px', color:'var(--text)', fontFamily:'Jost', fontSize:14 }}
-                  />
+                <div style={{ position:'fixed', inset:0, background:'rgba(61,31,13,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(4px)' }}
+                  onClick={() => setShowTakvim(false)}>
+                  <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:20, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}
+                    onClick={e => e.stopPropagation()}>
+                    <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>Tarih Seç</p>
+                    <input type="date" value={secilenTarih}
+                      onChange={e => {
+                        const d = new Date(e.target.value);
+                        const gunler3 = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+                        const gunAdi = gunler3[d.getDay()];
+                        const yeniGun = (gunAdi === 'Pazar' || gunAdi === 'Cumartesi') ? 'Pazartesi' : gunAdi;
+                        setSecilenTarih(e.target.value);
+                        setGun(yeniGun);
+                        setSaat('');
+                        setKayitlar({});
+                        setMevcutYoklama({});
+                        setShowTakvim(false);
+                      }}
+                      style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'12px 14px', color:'var(--text)', fontFamily:'Jost', fontSize:15, width:'100%' }}
+                    />
+                    <button onClick={() => { setSecilenTarih(new Date().toISOString().split('T')[0]); setGun(getTodayGun()); setSaat(''); setKayitlar({}); setMevcutYoklama({}); setShowTakvim(false); }}
+                      style={{ marginTop:10, width:'100%', padding:'10px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, cursor:'pointer', color:'var(--text2)', fontFamily:'Jost', fontSize:13 }}>
+                      Bugüne Dön
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
