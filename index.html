@@ -52,9 +52,9 @@
 </head>
 <body>
   <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
   <script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -1433,6 +1433,13 @@ const App = () => {
     api('getAyarlar').then(d => { if (d && !d.error) setAyarlar(d); });
   }, []);
 
+  // Reload on tab focus (when user returns to app)
+  useEffect(() => {
+    const handleFocus = () => loadOgrenciler();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const showToast = (msg, type = 'info') => setToast({ msg, type });
 
   const tabs = [
@@ -1459,7 +1466,7 @@ const App = () => {
       {/* Bottom Nav */}
       <div style={{ background:'var(--bg2)', borderTop:`1px solid var(--border)`, boxShadow:'0 -2px 20px rgba(61,31,13,0.08)', paddingBottom:'env(safe-area-inset-bottom)', display:'flex', overflowX:'auto' }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id); loadOgrenciler(); if(t.id==='yoklama') setYoklamaKey(k=>k+1); }} style={{ flex:'0 0 20%', minWidth:64, padding:'10px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'all 0.2s' }}>
+          <button key={t.id} onClick={() => { setTab(t.id); if(t.id==='yoklama') setYoklamaKey(k=>k+1); }} style={{ flex:'0 0 20%', minWidth:64, padding:'10px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'all 0.2s' }}>
             <Icon name={t.icon} size={20} color={tab===t.id ? 'var(--gold)' : 'var(--text3)'} />
             <span style={{ fontSize:9, letterSpacing:0.3, color:tab===t.id?'var(--gold)':'var(--text3)', fontWeight:tab===t.id?500:400 }}>{t.label}</span>
           </button>
