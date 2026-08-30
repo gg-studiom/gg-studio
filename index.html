@@ -256,36 +256,57 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
         </div>
       </div>
 
-      {form.paket_tipi && (
+      {form.paket_tipi === '8' && (
+        <>
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Çifti Seç *</label>
+            {[['Pazartesi','Perşembe'],['Salı','Cuma'],['Çarşamba','Cumartesi']].map(([g1,g2]) => {
+              const selected = form.gun1 === g1 && form.gun2 === g2;
+              return (
+                <button key={g1} onClick={() => { set('gun1',g1); set('gun2',g2); set('saat1',''); set('saat2',''); }}
+                  style={{ display:'block', width:'100%', padding:'12px 16px', marginBottom:8, borderRadius:12,
+                    border:`1px solid ${selected?'var(--gold)':'var(--border)'}`,
+                    background:selected?'rgba(139,58,31,0.1)':'var(--bg3)',
+                    color:selected?'var(--gold)':'var(--text2)',
+                    fontFamily:'Jost', fontSize:14, cursor:'pointer', textAlign:'left', fontWeight:selected?600:400
+                  }}>
+                  {g1} + {g2}
+                </button>
+              );
+            })}
+          </div>
+          {form.gun1 && (
+            <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+              <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>
+                Saat Seç * <span style={{ color:'var(--text2)', fontSize:10 }}>({form.gun1} & {form.gun2} aynı saat)</span>
+              </p>
+              <Select label="" value={form.saat1} onChange={e => { set('saat1',e.target.value); set('saat2',e.target.value); }}
+                options={SAATLER.filter(s => !doluSaat1.includes(s) && !doluSaat2.includes(s)).map(s => ({ value:s, label:s }))} />
+            </div>
+          )}
+        </>
+      )}
+
+      {form.paket_tipi === '12' && (
         <>
           <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
             <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>1. Gün & Saat</p>
-            <Select label="Gün 1 *" value={form.gun1} onChange={e => { set('gun1', e.target.value); set('saat1', ''); }} options={GUNLER} />
-            {form.gun1 && (
-              <Select label="Saat 1 *" value={form.saat1} onChange={e => set('saat1', e.target.value)}
-                options={SAATLER.filter(s => !doluSaat1.includes(s)).map(s => ({ value:s, label:doluSaat1.includes(s)?`${s} (Dolu)`:s }))} />
-            )}
+            <Select label="Gün 1 *" value={form.gun1} onChange={e => { set('gun1',e.target.value); set('saat1',''); }} options={GUNLER} />
+            {form.gun1 && <Select label="Saat 1 *" value={form.saat1} onChange={e => set('saat1',e.target.value)}
+              options={SAATLER.filter(s => !doluSaat1.includes(s)).map(s => ({ value:s, label:s }))} />}
           </div>
-
           <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
             <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>2. Gün & Saat</p>
-            <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2', e.target.value); set('saat2', ''); }} options={GUNLER.filter(g => g !== form.gun1)} />
-            {form.gun2 && (
-              <Select label="Saat 2 *" value={form.saat2} onChange={e => set('saat2', e.target.value)}
-                options={SAATLER.filter(s => !doluSaat2.includes(s)).map(s => ({ value:s, label: s }))} />
-            )}
+            <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2',e.target.value); set('saat2',''); }} options={GUNLER.filter(g => g !== form.gun1)} />
+            {form.gun2 && <Select label="Saat 2 *" value={form.saat2} onChange={e => set('saat2',e.target.value)}
+              options={SAATLER.filter(s => !doluSaat2.includes(s)).map(s => ({ value:s, label:s }))} />}
           </div>
-
-          {form.paket_tipi === '12' && (
-            <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
-              <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>3. Gün & Saat</p>
-              <Select label="Gün 3 *" value={form.gun3} onChange={e => { set('gun3', e.target.value); set('saat3', ''); }} options={GUNLER.filter(g => g !== form.gun1 && g !== form.gun2)} />
-              {form.gun3 && (
-                <Select label="Saat 3 *" value={form.saat3} onChange={e => set('saat3', e.target.value)}
-                  options={SAATLER.filter(s => !doluSaat3.includes(s)).map(s => ({ value:s, label: s }))} />
-              )}
-            </div>
-          )}
+          <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>3. Gün & Saat</p>
+            <Select label="Gün 3 *" value={form.gun3} onChange={e => { set('gun3',e.target.value); set('saat3',''); }} options={GUNLER.filter(g => g !== form.gun1 && g !== form.gun2)} />
+            {form.gun3 && <Select label="Saat 3 *" value={form.saat3} onChange={e => set('saat3',e.target.value)}
+              options={SAATLER.filter(s => !doluSaat3.includes(s)).map(s => ({ value:s, label:s }))} />}
+          </div>
         </>
       )}
 
