@@ -201,7 +201,8 @@ const Btn = ({ children, onClick, variant = 'primary', disabled, style: s }) => 
 const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
   const [form, setForm] = useState({
     ad_soyad:'', tc_kimlik:'', telefon:'+90', dogum_tarihi:'',
-    paket_tipi:'', gun1:'', saat1:'', gun2:'', saat2:'', gun3:'', saat3:'',
+    paket_tipi:'', ders_tipi:'grup', gun1:'', saat1:'', gun2:'', saat2:'', gun3:'', saat3:'',
+    serbest_gun: false,
     ...(initial || {})
   });
   const [saving, setSaving] = useState(false);
@@ -246,6 +247,17 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
       <Input label="Doğum Tarihi" type="date" value={form.dogum_tarihi} onChange={e => set('dogum_tarihi', e.target.value)} />
 
       <div style={{ marginBottom:16 }}>
+        <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Ders Tipi *</label>
+        <div style={{ display:'flex', gap:8 }}>
+          {[['grup','👥 Grup'],['duet','👫 Düet'],['bireysel','🧘 Bireysel']].map(([v,l]) => (
+            <button key={v} onClick={() => set('ders_tipi', v)} style={{ flex:1, padding:'10px 6px', borderRadius:10, border:`1px solid ${form.ders_tipi===v?'var(--gold)':'var(--border)'}`, background:form.ders_tipi===v?'rgba(139,58,31,0.1)':'var(--bg3)', color:form.ders_tipi===v?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:12, fontWeight:form.ders_tipi===v?600:400, cursor:'pointer' }}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom:16 }}>
         <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Paket Tipi *</label>
         <div style={{ display:'flex', gap:10 }}>
           {['8','12'].map(p => (
@@ -259,11 +271,11 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
       {form.paket_tipi === '8' && (
         <>
           <div style={{ marginBottom:16 }}>
-            <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Çifti Seç *</label>
+            <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seçimi *</label>
             {[['Pazartesi','Perşembe'],['Salı','Cuma'],['Çarşamba','Cumartesi']].map(([g1,g2]) => {
-              const selected = form.gun1 === g1 && form.gun2 === g2;
+              const selected = !form.serbest_gun && form.gun1 === g1 && form.gun2 === g2;
               return (
-                <button key={g1} onClick={() => { set('gun1',g1); set('gun2',g2); set('saat1',''); set('saat2',''); }}
+                <button key={g1} onClick={() => { set('gun1',g1); set('gun2',g2); set('saat1',''); set('saat2',''); set('serbest_gun',false); }}
                   style={{ display:'block', width:'100%', padding:'12px 16px', marginBottom:8, borderRadius:12,
                     border:`1px solid ${selected?'var(--gold)':'var(--border)'}`,
                     background:selected?'rgba(139,58,31,0.1)':'var(--bg3)',
@@ -274,8 +286,18 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
                 </button>
               );
             })}
+            <button onClick={() => { set('serbest_gun',true); set('gun1',''); set('gun2',''); set('saat1',''); set('saat2',''); }}
+              style={{ display:'block', width:'100%', padding:'12px 16px', marginBottom:8, borderRadius:12,
+                border:`1px solid ${form.serbest_gun?'var(--gold)':'var(--border)'}`,
+                background:form.serbest_gun?'rgba(139,58,31,0.1)':'var(--bg3)',
+                color:form.serbest_gun?'var(--gold)':'var(--text2)',
+                fontFamily:'Jost', fontSize:14, cursor:'pointer', textAlign:'left', fontWeight:form.serbest_gun?600:400
+              }}>
+              ✏️ Kendim seçeyim
+            </button>
           </div>
-          {form.gun1 && (
+          {/* Sabit çift seçildiyse tek saat */}
+          {!form.serbest_gun && form.gun1 && (
             <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
               <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>
                 Saat Seç * <span style={{ color:'var(--text2)', fontSize:10 }}>({form.gun1} & {form.gun2} aynı saat)</span>
@@ -283,6 +305,24 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
               <Select label="" value={form.saat1} onChange={e => { set('saat1',e.target.value); set('saat2',e.target.value); }}
                 options={SAATLER.filter(s => !doluSaat1.includes(s) && !doluSaat2.includes(s)).map(s => ({ value:s, label:s }))} />
             </div>
+          )}
+
+          {/* Serbest seçim */}
+          {form.serbest_gun && (
+            <>
+              <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+                <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>1. Gün & Saat</p>
+                <Select label="Gün 1 *" value={form.gun1} onChange={e => { set('gun1',e.target.value); set('saat1',''); }} options={GUNLER} />
+                {form.gun1 && <Select label="Saat 1 *" value={form.saat1} onChange={e => set('saat1',e.target.value)}
+                  options={SAATLER.filter(s => !doluSaat1.includes(s)).map(s => ({ value:s, label:s }))} />}
+              </div>
+              <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, marginBottom:16 }}>
+                <p style={{ fontSize:11, letterSpacing:2, color:'var(--gold)', textTransform:'uppercase', marginBottom:12 }}>2. Gün & Saat</p>
+                <Select label="Gün 2 *" value={form.gun2} onChange={e => { set('gun2',e.target.value); set('saat2',''); }} options={GUNLER.filter(g => g !== form.gun1)} />
+                {form.gun2 && <Select label="Saat 2 *" value={form.saat2} onChange={e => set('saat2',e.target.value)}
+                  options={SAATLER.filter(s => !doluSaat2.includes(s)).map(s => ({ value:s, label:s }))} />}
+              </div>
+            </>
           )}
         </>
       )}
@@ -1193,7 +1233,7 @@ const DersProgrami = ({ ogrenciler, loading }) => {
                 <th style={{ padding:'8px 10px', fontSize:11, color:'var(--text2)', fontWeight:500, textAlign:'left', background:'var(--bg2)', borderBottom:'1px solid var(--border)', borderRight:'1px solid var(--border)', position:'sticky', top:0, zIndex:10, width:52 }}>Saat</th>
                 {GUNLER.map(gun => (
                   <th key={gun} style={{ padding:'8px 4px', fontSize:11, color:'var(--gold)', fontWeight:600, textAlign:'center', background:'var(--bg2)', borderBottom:'1px solid var(--border)', borderRight:'1px solid var(--border)', position:'sticky', top:0, zIndex:10 }}>
-                    {gun.slice(0,3)}
+                    {gun === 'Cumartesi' ? 'Cmt' : gun === 'Çarşamba' ? 'Çar' : gun === 'Perşembe' ? 'Per' : gun.slice(0,3)}
                   </th>
                 ))}
               </tr>
