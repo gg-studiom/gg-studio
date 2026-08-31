@@ -60,7 +60,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 
 const API = 'https://script.google.com/macros/s/AKfycbwnFUWFEy7v5UoYksPLiJdx-5FLJ9_Eb8YjQou_kW7jUnc4ygZvnUTeyPnuMuc8UsPT/exec';
 
-const GUNLER = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+const GUNLER = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 // Herhangi bir tarih formatını DD.MM.YYYY'e çevir
 function formatTarih(val) {
@@ -1185,25 +1185,41 @@ const DersProgrami = ({ ogrenciler, loading }) => {
         ))}
       </div>
 
-      <div style={{ flex:1, overflowY:'auto', padding:'0 20px 100px' }}>
-        {loading ? <Loader /> : !program ? null : GUNLER.map(gun => (
-          <div key={gun} style={{ marginBottom:20 }}>
-            <p style={{ fontFamily:'Cormorant Garamond', fontSize:18, color:'var(--gold2)', marginBottom:10, letterSpacing:1 }}>{gun}</p>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
-              {SAATLER.map(saat => {
-                const slot = program[gun]?.[saat] || { durum:'bos', ogrenciler:[], sayi:0 };
-                const st = durumStyle(slot.durum);
-                return (
-                  <div key={saat} onClick={() => slot.sayi > 0 && setDetail({ gun, saat, slot })} style={{ background:st.bg, border:`1px solid ${st.border}`, boxShadow:'inset 0 1px 0 rgba(255,255,255,0.6)', borderRadius:12, padding:'12px 8px', textAlign:'center', cursor:slot.sayi>0?'pointer':'default' }}>
-                    <div style={{ width:10, height:10, borderRadius:'50%', background:st.dot, margin:'0 auto 6px' }} />
-                    <p style={{ fontSize:13, color:'var(--cream)', fontWeight:500 }}>{saat}</p>
-                    <p style={{ fontSize:11, color:'var(--text2)', marginTop:2 }}>{slot.sayi}/5</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <div style={{ flex:1, overflow:'auto', padding:'0 0 100px' }}>
+        {loading ? <Loader /> : !program ? null : (
+          <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+            <thead>
+              <tr>
+                <th style={{ padding:'8px 10px', fontSize:11, color:'var(--text2)', fontWeight:500, textAlign:'left', background:'var(--bg2)', borderBottom:'1px solid var(--border)', borderRight:'1px solid var(--border)', position:'sticky', top:0, zIndex:10, width:52 }}>Saat</th>
+                {GUNLER.map(gun => (
+                  <th key={gun} style={{ padding:'8px 4px', fontSize:11, color:'var(--gold)', fontWeight:600, textAlign:'center', background:'var(--bg2)', borderBottom:'1px solid var(--border)', borderRight:'1px solid var(--border)', position:'sticky', top:0, zIndex:10 }}>
+                    {gun.slice(0,3)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {SAATLER.map(saat => (
+                <tr key={saat} style={{ borderBottom:'1px solid var(--border)' }}>
+                  <td style={{ padding:'10px 10px', fontSize:12, fontWeight:600, color:'var(--text)', background:'var(--bg2)', borderRight:'1px solid var(--border)', whiteSpace:'nowrap' }}>{saat}</td>
+                  {GUNLER.map(gun => {
+                    const slot = program[gun]?.[saat] || { durum:'bos', ogrenciler:[], sayi:0 };
+                    const st = durumStyle(slot.durum);
+                    return (
+                      <td key={gun} onClick={() => slot.sayi > 0 && setDetail({ gun, saat, slot })}
+                        style={{ padding:'8px 2px', textAlign:'center', borderRight:'1px solid var(--border)', background:st.bg, cursor:slot.sayi > 0 ? 'pointer' : 'default' }}>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                          <div style={{ width:8, height:8, borderRadius:'50%', background:st.dot }} />
+                          <span style={{ fontSize:10, color:'var(--text2)' }}>{slot.sayi > 0 ? slot.sayi : '—'}</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {detail && (
