@@ -600,7 +600,13 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar }) => {
 // ── ÖDEME FORMU ───────────────────────────────────────────────
 const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
   const bugun = new Date().toISOString().split('T')[0];
-  const fiyat = ogrenci.paket_tipi === '8' ? (ayarlar.fiyat_8 || 3000) : (ayarlar.fiyat_12 || 4500);
+  const getFiyat = () => {
+    if (ogrenci.ders_tipi === 'bireysel') {
+      return ogrenci.paket_tipi === '8' ? (Number(ayarlar.fiyat_bireysel_8) || 8000) : (Number(ayarlar.fiyat_bireysel_12) || 11500);
+    }
+    return ogrenci.paket_tipi === '8' ? (Number(ayarlar.fiyat_8) || 3500) : (Number(ayarlar.fiyat_12) || 5000);
+  };
+  const fiyat = getFiyat();
   const [form, setForm] = React.useState({
     tarih: bugun, tutar: String(fiyat), notlar: '', durum: 'odendi'
   });
@@ -660,8 +666,10 @@ const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
   const [tumOdemeler, setTumOdemeler] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [showFiyat, setShowFiyat] = React.useState(false);
-  const [fiyat8, setFiyat8] = React.useState(String(ayarlar.fiyat_8 || 3000));
-  const [fiyat12, setFiyat12] = React.useState(String(ayarlar.fiyat_12 || 4500));
+  const [fiyat8, setFiyat8] = React.useState(String(ayarlar.fiyat_8 || 3500));
+  const [fiyat12, setFiyat12] = React.useState(String(ayarlar.fiyat_12 || 5000));
+  const [fiyatBireysel8, setFiyatBireysel8] = React.useState(String(ayarlar.fiyat_bireysel_8 || 8000));
+  const [fiyatBireysel12, setFiyatBireysel12] = React.useState(String(ayarlar.fiyat_bireysel_12 || 11500));
 
   const load = async () => {
     setLoading(true);
@@ -679,7 +687,9 @@ const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
   const handleFiyatKaydet = async () => {
     await Promise.all([
       api('updateAyar', {}, { anahtar: 'fiyat_8', deger: Number(fiyat8) }),
-      api('updateAyar', {}, { anahtar: 'fiyat_12', deger: Number(fiyat12) })
+      api('updateAyar', {}, { anahtar: 'fiyat_12', deger: Number(fiyat12) }),
+      api('updateAyar', {}, { anahtar: 'fiyat_bireysel_8', deger: Number(fiyatBireysel8) }),
+      api('updateAyar', {}, { anahtar: 'fiyat_bireysel_12', deger: Number(fiyatBireysel12) })
     ]);
     showToast('Fiyatlar güncellendi!', 'success');
     setShowFiyat(false);
@@ -769,8 +779,12 @@ const Ciro = ({ ogrenciler, ayarlar, showToast }) => {
           <div style={{ background:'rgba(139,58,31,0.06)', borderRadius:12, padding:14, marginBottom:16 }}>
             <p style={{ fontSize:12, color:'var(--text2)' }}>Fiyatları değiştirince yeni kayıtlarda otomatik uygulanır.</p>
           </div>
-          <Input label="8 Seans Paketi (₺)" value={fiyat8} onChange={e => setFiyat8(e.target.value)} inputMode="numeric" />
-          <Input label="12 Seans Paketi (₺)" value={fiyat12} onChange={e => setFiyat12(e.target.value)} inputMode="numeric" />
+          <p style={{ fontSize:11, letterSpacing:1, color:'var(--text2)', marginBottom:8 }}>GRUP</p>
+          <Input label="Grup 8 Seans (₺)" value={fiyat8} onChange={e => setFiyat8(e.target.value)} inputMode="numeric" />
+          <Input label="Grup 12 Seans (₺)" value={fiyat12} onChange={e => setFiyat12(e.target.value)} inputMode="numeric" />
+          <p style={{ fontSize:11, letterSpacing:1, color:'var(--text2)', marginBottom:8, marginTop:8 }}>BİREYSEL</p>
+          <Input label="Bireysel 8 Seans (₺)" value={fiyatBireysel8} onChange={e => setFiyatBireysel8(e.target.value)} inputMode="numeric" />
+          <Input label="Bireysel 12 Seans (₺)" value={fiyatBireysel12} onChange={e => setFiyatBireysel12(e.target.value)} inputMode="numeric" />
           <div style={{ display:'flex', gap:10 }}>
             <Btn variant="secondary" onClick={() => setShowFiyat(false)} style={{ flex:1 }}>İptal</Btn>
             <Btn onClick={handleFiyatKaydet} style={{ flex:2 }}>Kaydet</Btn>
