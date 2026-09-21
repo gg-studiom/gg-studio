@@ -537,7 +537,7 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar }) => {
   );
 
   const handleAdd = async (form) => {
-    const r = await api('addOgrenci', {}, form);
+    const r = await api('addOgrenci', {}, { ...form, ders_tipi: form.ders_tipi || 'grup' });
     if (r.success) { showToast('Öğrenci eklendi!', 'success'); setShowForm(false); reload(); }
     else showToast(r.error || 'Hata', 'error');
   };
@@ -573,7 +573,7 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar }) => {
               </div>
               <div>
                 <p style={{ fontSize:15, color:'var(--cream)', fontWeight:500, marginBottom:2 }}>{o.ad_soyad}</p>
-                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans · {o.gun1} {formatSaat(o.saat1)}</p>
+                <p style={{ fontSize:11, color:'var(--text2)' }}>{o.paket_tipi} seans · {o.ders_tipi === 'bireysel' ? '🧘' : o.ders_tipi === 'duet' ? '👫' : '👥'} · {o.gun1} {formatSaat(o.saat1)}</p>
               </div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -960,7 +960,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
   };
 
   const handleEdit = async (form) => {
-    const r = await api('updateOgrenci', {}, { id: ogrenci.id, ...form });
+    const r = await api('updateOgrenci', {}, { id: ogrenci.id, ...form, ders_tipi: form.ders_tipi || 'grup' });
     if (r.success) { showToast('Güncellendi!', 'success'); setShowEdit(false); refreshOgrenci(); reload(); }
     else showToast(r.error || 'Hata', 'error');
   };
@@ -1018,6 +1018,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
           {[
             { l:'TC Kimlik', v: ogrenci.tc_kimlik },
             { l:'Doğum Tarihi', v: formatTarih(ogrenci.dogum_tarihi) },
+            { l:'Ders Tipi', v: ogrenci.ders_tipi === 'bireysel' ? '🧘 Bireysel' : ogrenci.ders_tipi === 'duet' ? '👫 Düet' : '👥 Grup' },
             { l:'Paket', v: `${ogrenci.paket_tipi} seans` },
             { l:'Kayıt', v: formatTarih(ogrenci.kayit_tarihi) },
           ].filter(x => x.v).map(x => (
@@ -1195,10 +1196,17 @@ const DersProgrami = ({ ogrenciler, loading }) => {
     });
     GUNLER.forEach(g => {
       SAATLER.forEach(s => {
-        const sayi = prog[g][s].sayi;
-        if (sayi === 0) prog[g][s].durum = 'bos';
-        else if (sayi < KONTENJAN) prog[g][s].durum = 'eksik';
-        else prog[g][s].durum = 'dolu';
+        const slot2 = prog[g][s];
+        const sayi = slot2.sayi;
+        let kontenjan = 5;
+        if (slot2.ogrenciler.length > 0) {
+          const ilk = ogrenciler.find(o => o.id === slot2.ogrenciler[0].id);
+          if (ilk?.ders_tipi === 'bireysel') kontenjan = 1;
+          else if (ilk?.ders_tipi === 'duet') kontenjan = 2;
+        }
+        if (sayi === 0) slot2.durum = 'bos';
+        else if (sayi < kontenjan) slot2.durum = 'eksik';
+        else slot2.durum = 'dolu';
       });
     });
     return prog;
