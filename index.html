@@ -200,7 +200,7 @@ const Btn = ({ children, onClick, variant = 'primary', disabled, style: s }) => 
 // ── ÖĞRENCI FORMU ──────────────────────────────────────────────
 const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
   const [form, setForm] = useState({
-    ad_soyad:'', tc_kimlik:'', telefon:'+90', dogum_tarihi:'',
+    ad_soyad:'', tc_kimlik:'', telefon:'0', dogum_tarihi:'',
     paket_tipi:'', ders_tipi:'grup', gun1:'', saat1:'', gun2:'', saat2:'', gun3:'', saat3:'',
     serbest_gun: false,
     ...(initial || {})
