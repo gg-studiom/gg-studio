@@ -1334,6 +1334,10 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   const [saving, setSaving] = useState({});
   const [search, setSearch] = useState('');
   const [loadingYoklama, setLoadingYoklama] = useState(false);
+  const [showTelafi, setShowTelafi] = useState(false);
+  const [telafiKapsam, setTelafiKapsam] = useState('tum_gun');
+  const [telafiSaatler, setTelafiSaatler] = useState([]);
+  const [telafiYukleniyor, setTelafiYukleniyor] = useState(false);
 
   const bugunGun = () => {
     const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
@@ -1364,6 +1368,49 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   }, [refreshKey]);
 
   // Mevcut yoklamayı yükle
+  const handleTelafi = async () => {
+    setTelafiYukleniyor(true);
+    const tarih = new Date().toLocaleDateString('tr-TR');
+    
+    // Hangi saatleri işleyeceğiz
+    const hedefSaatler = telafiKapsam === 'tum_gun' ? SAATLER : telafiSaatler;
+    
+    // O gündeki kayıtlı öğrencileri bul
+    let islemler = [];
+    for (const saat of hedefSaatler) {
+      const kayitlilar = ogrenciler.filter(o => {
+        if (o.kalan_ders <= 0) return false;
+        const g1 = (o.gun1||'').trim(), s1 = (o.saat1||'').trim();
+        const g2 = (o.gun2||'').trim(), s2 = (o.saat2||'').trim();
+        const g3 = (o.gun3||'').trim(), s3 = (o.saat3||'').trim();
+        return (g1===gun && s1===saat) || (g2===gun && s2===saat) || (g3===gun && s3===saat);
+      });
+      
+      for (const ogr of kayitlilar) {
+        // Bugün bu saat için zaten kayıt var mı?
+        const mevcutlar = await api('getYoklamaByGunSaatTarih', { gun, saat, tarih });
+        const mevcut = Array.isArray(mevcutlar) ? mevcutlar.find(y => y.ogrenci_id === ogr.id) : null;
+        
+        if (mevcut) {
+          // Güncelle
+          if (mevcut.durum !== 'telafi') {
+            await api('updateYoklama', {}, { id: mevcut.id, durum: 'telafi' });
+          }
+        } else {
+          // Yeni ekle
+          await api('addYoklama', {}, { ogrenci_id: ogr.id, tarih, gun, saat, durum: 'telafi' });
+        }
+        islemler.push(ogr.ad_soyad);
+      }
+    }
+    
+    setTelafiYukleniyor(false);
+    setShowTelafi(false);
+    setTelafiSaatler([]);
+    showToast(`${islemler.length} öğrenciye telafi girildi`, 'success');
+    reload();
+  };
+
   const yukleYoklama = () => {
     if (!gun || !saat) return;
     setLoadingYoklama(true);
@@ -1431,7 +1478,13 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ padding:'20px 20px 12px' }}>
-        <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1, marginBottom:16 }}>Yoklama</h2>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <h2 style={{ fontFamily:'Cormorant Garamond', fontSize:28, fontWeight:400, color:'var(--cream)', letterSpacing:1 }}>Yoklama</h2>
+          <button onClick={() => setShowTelafi(true)}
+            style={{ background:'rgba(200,149,108,0.15)', border:'1px solid rgba(200,149,108,0.3)', borderRadius:12, padding:'8px 14px', cursor:'pointer', color:'var(--gold)', fontFamily:'Jost', fontSize:13, fontWeight:500 }}>
+            ↺ Telafi
+          </button>
+        </div>
 
         <div style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Gün Seç</label>
@@ -1569,6 +1622,70 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
           </div>
         )}
       </div>
+      {/* Telafi Modal */}
+      {showTelafi && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(61,31,13,0.5)', zIndex:1000, display:'flex', alignItems:'flex-end', backdropFilter:'blur(4px)' }}
+          onClick={() => setShowTelafi(false)}>
+          <div style={{ background:'var(--bg2)', width:'100%', borderRadius:'20px 20px 0 0', padding:'20px', maxHeight:'85vh', overflowY:'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, borderBottom:'1px solid var(--border)', paddingBottom:16 }}>
+              <span style={{ fontFamily:'Cormorant Garamond', fontSize:20, fontWeight:500, color:'var(--gold)' }}>↺ Telafi — {gun}</span>
+              <button onClick={() => setShowTelafi(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text2)', fontSize:20 }}>✕</button>
+            </div>
+
+            {/* Kapsam seçimi */}
+            <p style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:10 }}>Kapsam</p>
+            <div style={{ display:'flex', gap:10, marginBottom:16 }}>
+              {[['tum_gun','📅 Tüm Gün'],['belirli_saatler','🕐 Belirli Saatler']].map(([v,l]) => (
+                <button key={v} onClick={() => { setTelafiKapsam(v); setTelafiSaatler([]); }}
+                  style={{ flex:1, padding:'12px', borderRadius:12, border:`1px solid ${telafiKapsam===v?'var(--gold)':'var(--border)'}`, background:telafiKapsam===v?'rgba(200,149,108,0.1)':'var(--bg3)', color:telafiKapsam===v?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer', fontWeight:telafiKapsam===v?600:400 }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {/* Saat seçimi */}
+            {telafiKapsam === 'belirli_saatler' && (
+              <div style={{ marginBottom:16 }}>
+                <p style={{ fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:10 }}>Saatler</p>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {SAATLER.map(s => {
+                    const sec = telafiSaatler.includes(s);
+                    return (
+                      <button key={s} onClick={() => setTelafiSaatler(prev => sec ? prev.filter(x => x!==s) : [...prev, s])}
+                        style={{ padding:'8px 14px', borderRadius:20, border:`1px solid ${sec?'var(--gold)':'var(--border)'}`, background:sec?'rgba(200,149,108,0.15)':'var(--bg3)', color:sec?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:13, cursor:'pointer', fontWeight:sec?600:400 }}>
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div style={{ background:'rgba(200,149,108,0.08)', borderRadius:12, padding:12, marginBottom:16 }}>
+              <p style={{ fontSize:12, color:'var(--text2)' }}>
+                {telafiKapsam === 'tum_gun' 
+                  ? `${gun} günündeki tüm öğrencilere telafi girilecek.`
+                  : telafiSaatler.length === 0 
+                    ? 'Lütfen saat seçin.'
+                    : `${gun} günü ${telafiSaatler.join(', ')} saatlerindeki öğrencilere telafi girilecek.`
+                }
+              </p>
+            </div>
+
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setShowTelafi(false)}
+                style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'Jost', fontSize:14, cursor:'pointer' }}>
+                İptal
+              </button>
+              <button onClick={handleTelafi} disabled={telafiYukleniyor || (telafiKapsam==='belirli_saatler' && telafiSaatler.length===0)}
+                style={{ flex:2, padding:'12px', borderRadius:12, border:'none', background:'linear-gradient(135deg, var(--gold), var(--gold2))', color:'var(--bg)', fontFamily:'Jost', fontSize:14, fontWeight:600, cursor:'pointer', opacity: (telafiYukleniyor || (telafiKapsam==='belirli_saatler' && telafiSaatler.length===0)) ? 0.5 : 1 }}>
+                {telafiYukleniyor ? 'İşleniyor...' : '↺ Telafi Uygula'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
