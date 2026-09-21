@@ -1239,7 +1239,7 @@ const DersProgrami = ({ ogrenciler, loading }) => {
       </div>
       {/* Lejant */}
       <div style={{ padding:'0 20px 12px', display:'flex', gap:14 }}>
-        {[['var(--green)','Boş'],['var(--red)','Eksik'],['var(--cream)','Dolu']].map(([c,l]) => (
+        {[['var(--green)','Boş'],['var(--red)','Eksik'],['var(--cream)','Dolu'],['#7c3aed','Bireysel']].map(([c,l]) => (
           <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:c }} />
             <span style={{ fontSize:11, color:'var(--text2)', letterSpacing:1 }}>{l}</span>
@@ -1266,7 +1266,10 @@ const DersProgrami = ({ ogrenciler, loading }) => {
                   <td style={{ padding:'30px 12px', fontSize:13, fontWeight:600, color:'var(--text)', background:'var(--bg2)', borderRight:'1px solid var(--border)', whiteSpace:'nowrap' }}>{saat}</td>
                   {GUNLER.map(gun => {
                     const slot = program[gun]?.[saat] || { durum:'bos', ogrenciler:[], sayi:0 };
-                    const st = durumStyle(slot.durum);
+                    const isBireysel = slot.ogrenciler.length > 0 && ogrenciler.find(o => o.id === slot.ogrenciler[0].id)?.ders_tipi === 'bireysel';
+                    const st = isBireysel 
+                      ? { bg:'rgba(139,92,246,0.15)', border:'rgba(139,92,246,0.3)', dot:'#7c3aed' }
+                      : durumStyle(slot.durum);
                     return (
                       <td key={gun} onClick={() => slot.sayi > 0 && setDetail({ gun, saat, slot })}
                         style={{ padding:'30px 4px', textAlign:'center', borderRight:'1px solid var(--border)', background:st.bg, cursor:slot.sayi > 0 ? 'pointer' : 'default' }}>
