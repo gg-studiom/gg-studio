@@ -1234,7 +1234,8 @@ const DersProgrami = ({ ogrenciler, loading, onOgrenciSec }) => {
         const saatKey = s ? s.trim() : '';
         if (gunKey && saatKey && prog[gunKey] && prog[gunKey][saatKey] !== undefined) {
           prog[gunKey][saatKey].ogrenciler.push({ id: o.id, ad_soyad: o.ad_soyad });
-          prog[gunKey][saatKey].sayi++;
+          // Sadece dersi devam edenler sayıya dahil
+          if (o.kalan_ders > 0) prog[gunKey][saatKey].sayi++;
         }
       });
     });
