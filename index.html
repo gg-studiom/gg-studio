@@ -1398,7 +1398,13 @@ const ImzaModal = ({ ogrenci, onSave, onClose }) => {
 
   const kaydet = () => {
     const canvas = canvasRef.current;
-    const imzaData = canvas.toDataURL('image/png');
+    // Küçük canvas oluştur (sıkıştır)
+    const kucuk = document.createElement('canvas');
+    kucuk.width = 200;
+    kucuk.height = 80;
+    const ctx = kucuk.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, 200, 80);
+    const imzaData = kucuk.toDataURL('image/jpeg', 0.5);
     onSave(imzaData);
   };
 
@@ -1569,7 +1575,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     if (mevcut) {
       r = await api('updateYoklama', {}, { id: mevcut.id, durum });
     } else {
-      r = await api('addYoklama', {}, { ogrenci_id: ogrenci.id, tarih, gun, saat, durum });
+      r = await api('addYoklama', {}, { ogrenci_id: ogrenci.id, tarih, gun, saat, durum, imza: imzaData || '' });
     }
 
     if (r.success) {
