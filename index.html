@@ -535,9 +535,12 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar, acilacakI
   React.useEffect(() => {
     if (acilacakId && ogrenciler.length > 0) {
       const ogr = ogrenciler.find(o => o.id === acilacakId);
-      if (ogr) { setSelected(ogr); onAcildi && onAcildi(); }
+      if (ogr) {
+        setSelected(ogr);
+        onAcildi && onAcildi();
+      }
     }
-  }, [acilacakId, ogrenciler]);
+  }, [acilacakId]);
 
   const filtered = ogrenciler.filter(o =>
     o.ad_soyad?.toLowerCase().includes(search.toLowerCase())
@@ -1751,7 +1754,7 @@ const App = () => {
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} ayarlar={ayarlar} />}
         {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} ayarlar={ayarlar} acilacakId={programSeciliId} onAcildi={() => setProgramSeciliId(null)} />}
-        {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} onOgrenciSec={(id) => { setTab('ogrenciler'); setProgramSeciliId(id); }} />}
+        {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} onOgrenciSec={(id) => { setProgramSeciliId(id); setTab('ogrenciler'); }} />}
         {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} reload={loadOgrenciler} refreshKey={yoklamaKey} />}
         {tab === 'ciro' && <Ciro ogrenciler={ogrenciler} ayarlar={ayarlar} showToast={showToast} />}
       </div>
