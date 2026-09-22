@@ -243,7 +243,7 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
     <div>
       <Input label="Ad Soyad *" value={form.ad_soyad} onChange={e => set('ad_soyad', e.target.value)} placeholder="Ad Soyad" />
       <Input label="TC Kimlik" value={form.tc_kimlik} onChange={e => set('tc_kimlik', e.target.value)} placeholder="TC Kimlik No" inputMode="numeric" />
-      <Input label="Telefon" value={form.telefon} onChange={e => set('telefon', e.target.value)} placeholder="+90 5xx xxx xx xx" inputMode="tel" />
+      <Input label="Telefon" value={form.telefon} onChange={e => set('telefon', e.target.value.split(' ').join(''))} placeholder="05XXXXXXXXX" inputMode="tel" />
       <Input label="Doğum Tarihi" type="date" value={form.dogum_tarihi} onChange={e => set('dogum_tarihi', e.target.value)} />
 
       <div style={{ marginBottom:16 }}>
