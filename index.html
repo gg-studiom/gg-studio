@@ -1575,7 +1575,7 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
     if (mevcut) {
       r = await api('updateYoklama', {}, { id: mevcut.id, durum });
     } else {
-      r = await api('addYoklama', {}, { ogrenci_id: ogrenci.id, tarih, gun, saat, durum, imza: imzaData || '' });
+      r = await api('addYoklama', {}, { ogrenci_id: ogrenci.id, ogrenci_ad: ogrenci.ad_soyad, tarih, gun, saat, durum, imza: imzaData || '' });
     }
 
     if (r.success) {
