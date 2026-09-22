@@ -527,10 +527,17 @@ const AnaSayfa = ({ ogrenciler, loading, ayarlar }) => {
 };
 
 // ── ÖĞRENCİLER ────────────────────────────────────────────────
-const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar }) => {
+const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar, acilacakId, onAcildi }) => {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState(null);
+
+  React.useEffect(() => {
+    if (acilacakId && ogrenciler.length > 0) {
+      const ogr = ogrenciler.find(o => o.id === acilacakId);
+      if (ogr) { setSelected(ogr); onAcildi && onAcildi(); }
+    }
+  }, [acilacakId, ogrenciler]);
 
   const filtered = ogrenciler.filter(o =>
     o.ad_soyad?.toLowerCase().includes(search.toLowerCase())
@@ -1186,7 +1193,7 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
 };
 
 // ── DERS PROGRAMI ──────────────────────────────────────────────
-const DersProgrami = ({ ogrenciler, loading }) => {
+const DersProgrami = ({ ogrenciler, loading, onOgrenciSec }) => {
   const [detail, setDetail] = useState(null);
 
   // Programı öğrenci listesinden hesapla (her zaman güncel)
@@ -1299,11 +1306,13 @@ const DersProgrami = ({ ogrenciler, loading }) => {
       {detail && (
         <Modal title={`${detail.gun} ${detail.saat}`} onClose={() => setDetail(null)}>
           {detail.slot.ogrenciler.map(o => (
-            <div key={o.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+            <div key={o.id} onClick={() => { setDetail(null); onOgrenciSec && onOgrenciSec(o.id); }}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border)', cursor:'pointer' }}>
               <div style={{ width:36, height:36, borderRadius:'50%', background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <span style={{ fontFamily:'Cormorant Garamond', fontSize:15, color:'var(--gold)' }}>{o.ad_soyad[0]}</span>
               </div>
-              <span style={{ color:'var(--cream)', fontSize:15 }}>{o.ad_soyad}</span>
+              <span style={{ color:'var(--cream)', fontSize:15, flex:1 }}>{o.ad_soyad}</span>
+              <span style={{ fontSize:12, color:'var(--text2)' }}>›</span>
             </div>
           ))}
         </Modal>
@@ -1700,6 +1709,7 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [ayarlar, setAyarlar] = useState({ fiyat_8: 3000, fiyat_12: 4500 });
   const [yoklamaKey, setYoklamaKey] = useState(0);
+  const [programSeciliId, setProgramSeciliId] = useState(null);
   const ilkYukleme = React.useRef(true);
 
   const loadOgrenciler = useCallback(async () => {
@@ -1740,8 +1750,8 @@ const App = () => {
       {/* Content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {tab === 'ana' && <AnaSayfa ogrenciler={ogrenciler} loading={loading} ayarlar={ayarlar} />}
-        {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} ayarlar={ayarlar} />}
-        {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} />}
+        {tab === 'ogrenciler' && <Ogrenciler ogrenciler={ogrenciler} loading={loading} reload={loadOgrenciler} showToast={showToast} ayarlar={ayarlar} acilacakId={programSeciliId} onAcildi={() => setProgramSeciliId(null)} />}
+        {tab === 'program' && <DersProgrami ogrenciler={ogrenciler} loading={loading} onOgrenciSec={(id) => { setTab('ogrenciler'); setProgramSeciliId(id); }} />}
         {tab === 'yoklama' && <Yoklama ogrenciler={ogrenciler} showToast={showToast} reload={loadOgrenciler} refreshKey={yoklamaKey} />}
         {tab === 'ciro' && <Ciro ogrenciler={ogrenciler} ayarlar={ayarlar} showToast={showToast} />}
       </div>
