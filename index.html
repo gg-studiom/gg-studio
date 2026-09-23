@@ -261,7 +261,7 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
         <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:8 }}>Paket Tipi *</label>
         <div style={{ display:'flex', gap:10 }}>
           {['8','12'].map(p => (
-            <button key={p} onClick={() => set('paket_tipi', p)} style={{ flex:1, padding:'12px', borderRadius:10, border:`1px solid ${form.paket_tipi===p?'var(--gold)':'var(--border)'}`, background:form.paket_tipi===p?'rgba(200,149,108,0.15)':'var(--bg3)', color:form.paket_tipi===p?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:16, fontWeight:600, cursor:'pointer' }}>
+            <button key={p} onClick={() => { set('paket_tipi', p); if(p==='8'){set('gun3','');set('saat3','');} }} style={{ flex:1, padding:'12px', borderRadius:10, border:`1px solid ${form.paket_tipi===p?'var(--gold)':'var(--border)'}`, background:form.paket_tipi===p?'rgba(200,149,108,0.15)':'var(--bg3)', color:form.paket_tipi===p?'var(--gold)':'var(--text2)', fontFamily:'Jost', fontSize:16, fontWeight:600, cursor:'pointer' }}>
               {p} Seans
             </button>
           ))}
@@ -1027,7 +1027,9 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
       id: ogrenci.id, ...form, 
       ders_tipi: form.ders_tipi || 'grup',
       toplam_ders: yeniToplam,
-      kalan_ders: yeniKalan
+      kalan_ders: yeniKalan,
+      gun3: form.gun3 || '',
+      saat3: form.saat3 || ''
     });
     if (r.success) { showToast('Güncellendi!', 'success'); setShowEdit(false); refreshOgrenci(); reload(); }
     else showToast(r.error || 'Hata', 'error');
