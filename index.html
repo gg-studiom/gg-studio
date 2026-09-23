@@ -1581,6 +1581,8 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
   }, [gun, saat, refreshKey]);
 
   const handleYoklama = async (ogrenci, durum) => {
+    // Zaten kaydediliyorsa işlemi engelle
+    if (saving[ogrenci.id]) return;
     // Katıldı seçilince önce imza al
     if (durum === 'katildi') {
       setImzaBekleyen({ ogrenci, durum });
@@ -1783,9 +1785,11 @@ const Yoklama = ({ ogrenciler: ogrencilerProp, showToast, reload, refreshKey }) 
       {imzaBekleyen && (
         <ImzaModal 
           ogrenci={imzaBekleyen.ogrenci}
-          onSave={async (imzaData) => {
-            await _kaydetYoklama(imzaBekleyen.ogrenci, imzaBekleyen.durum, imzaData);
-            setImzaBekleyen(null);
+          onSave={(imzaData) => {
+            const ogr = imzaBekleyen.ogrenci;
+            const dur = imzaBekleyen.durum;
+            setImzaBekleyen(null); // Hemen kapat
+            _kaydetYoklama(ogr, dur, imzaData); // Arka planda kaydet
           }}
           onClose={() => setImzaBekleyen(null)}
         />
