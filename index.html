@@ -1019,10 +1019,15 @@ const OgrenciDetay = ({ ogrenci: initialOgrenci, ogrenciler, onBack, showToast, 
 
   const handleEdit = async (form) => {
     const yeniToplam = Number(form.paket_tipi);
+    // Kullanılan ders = eski toplam - eski kalan
+    const kullanilan = ogrenci.toplam_ders - ogrenci.kalan_ders;
+    // Yeni kalan = yeni toplam - kullanılan (min 0)
+    const yeniKalan = Math.max(0, yeniToplam - kullanilan);
     const r = await api('updateOgrenci', {}, { 
       id: ogrenci.id, ...form, 
       ders_tipi: form.ders_tipi || 'grup',
-      toplam_ders: yeniToplam
+      toplam_ders: yeniToplam,
+      kalan_ders: yeniKalan
     });
     if (r.success) { showToast('Güncellendi!', 'success'); setShowEdit(false); refreshOgrenci(); reload(); }
     else showToast(r.error || 'Hata', 'error');
