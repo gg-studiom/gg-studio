@@ -361,7 +361,7 @@ const OgrenciForm = ({ initial, onSave, onClose, mevcutOgrenciler = [] }) => {
 // ── PAKET YENİLEME ─────────────────────────────────────────────
 const PaketYenile = ({ ogrenci, mevcutOgrenciler, onSave, onClose }) => {
   const [paket, setPaket] = useState(ogrenci.paket_tipi);
-  const [form, setForm] = useState({ gun1: ogrenci.gun1, saat1: ogrenci.saat1, gun2: ogrenci.gun2, saat2: ogrenci.saat2, gun3: ogrenci.gun3 || '', saat3: ogrenci.saat3 || '' });
+  const [form, setForm] = useState({ paket_tipi: ogrenci.paket_tipi || '8', ders_tipi: ogrenci.ders_tipi || 'grup', gun1: ogrenci.gun1, saat1: ogrenci.saat1, gun2: ogrenci.gun2, saat2: ogrenci.saat2, gun3: ogrenci.gun3 || '', saat3: ogrenci.saat3 || '', serbest_gun: false });
   const [saving, setSaving] = useState(false);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
 
