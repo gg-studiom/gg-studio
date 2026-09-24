@@ -642,7 +642,7 @@ const Ogrenciler = ({ ogrenciler, loading, reload, showToast, ayarlar, acilacakI
 
 
 // ── ÖDEME FORMU ───────────────────────────────────────────────
-const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose }) => {
+const OdemeForm = ({ ogrenci, ayarlar, onSave, onClose, showToast }) => {
   const bugun = new Date().toISOString().split('T')[0];
   const getFiyat = () => {
     if (ogrenci.ders_tipi === 'bireysel') {
@@ -856,7 +856,7 @@ const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
       : new Date().toLocaleDateString('tr-TR');
     const r = await api('addOlcum', {}, { ogrenci_id: ogrenciId, ...form, tarih: tarihFormatted });
     if (r.success) { onSave(); }
-    else alert(r.error || 'Hata');
+    else { if(showToast) showToast(r.error || 'Ölçüm kaydedilemedi', 'error'); else alert(r.error || 'Hata'); }
     setSaving(false);
   };
 
