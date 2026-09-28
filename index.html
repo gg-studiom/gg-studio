@@ -844,7 +844,7 @@ const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
   const bugun = new Date().toISOString().split('T')[0];
   const [form, setForm] = React.useState({
     tarih: bugun, boy:'', kilo:'', gogus:'', bel:'',
-    basen:'', baldir:'', pazi:'', yag:'', notlar:''
+    basen:'', baldir:'', pazi:'', alt_karin:'', notlar:''
   });
   const [saving, setSaving] = React.useState(false);
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
@@ -865,7 +865,7 @@ const OlcumForm = ({ ogrenciId, onSave, onClose }) => {
       <Input label="Tarih" type="date" value={form.tarih} onChange={e => set('tarih', e.target.value)} />
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
         {[['boy','Boy (cm)'],['kilo','Kilo (kg)'],['gogus','Göğüs (cm)'],['bel','Bel (cm)'],
-          ['basen','Basen (cm)'],['baldir','Baldır (cm)'],['pazi','Pazı (cm)'],['yag','Yağ (%)']
+          ['basen','Basen (cm)'],['baldir','Baldır (cm)'],['pazi','Pazı (cm)'],['alt_karin','Alt Karın (cm)']
         ].map(([k,l]) => (
           <div key={k}>
             <label style={{ display:'block', fontSize:11, letterSpacing:2, color:'var(--text2)', textTransform:'uppercase', marginBottom:6 }}>{l}</label>
@@ -892,7 +892,7 @@ const OlcumTablosu = ({ olcumler, onDelete }) => {
   const alanlar = [
     ['boy','Boy','cm'],['kilo','Kilo','kg'],['gogus','Göğüs','cm'],
     ['bel','Bel','cm'],['basen','Basen','cm'],['baldir','Baldır','cm'],
-    ['pazi','Pazı','cm'],['yag','Yağ','%']
+    ['pazi','Pazı','cm'],['alt_karin','Alt Karın','cm']
   ];
 
   const fark = (k, i) => {
